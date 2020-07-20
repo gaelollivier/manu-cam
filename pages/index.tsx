@@ -2,23 +2,18 @@ import Head from 'next/head';
 import useSWR, { SWRConfig } from 'swr';
 
 const Images = () => {
-  const { data, error } = useSWR('/api/images');
+  const { data } = useSWR('/api/images', {
+    onSuccess: (data) => {
+      console.log({ data });
+    },
+    onError: (error) => {
+      console.log({ error });
+    },
+  });
 
-  const latestImageId = data?.images[0].fileId;
+  const latestImageUrl = data?.images[0]?.file.mediaLink;
 
-  return (
-    <>
-      <pre style={{ height: 300, overflowY: 'auto' }}>
-        {JSON.stringify({ data, error }, null, 4)}
-      </pre>
-      {latestImageId && (
-        <img
-          width="500"
-          src={`https://storage.googleapis.com/manu-cam-images/${latestImageId}`}
-        />
-      )}
-    </>
-  );
+  return <>{latestImageUrl && <img width="500" src={latestImageUrl} />}</>;
 };
 
 export default function Home() {
