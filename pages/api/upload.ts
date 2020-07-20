@@ -28,11 +28,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = Date.now();
 
-  const { files } = await parseRequest(req);
+  const { fields, files } = await parseRequest(req);
 
-  const savedImage = await saveImage(files.image.path, {
-    time: new Date(),
-  });
+  const time = typeof fields.time === 'string' ? new Date(fields.time) : null;
+  if (!time) {
+    throw new Error('Missing image time');
+  }
+
+  const savedImage = await saveImage(files.image.path, { time });
 
   const endTime = Date.now();
   console.log(`[upload] ${Math.round(endTime - startTime)}ms`);
