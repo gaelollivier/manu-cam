@@ -1,7 +1,9 @@
+import { copyFile, createReadStream } from 'fs';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { checkAuth } from '../../lib/auth';
 import { saveImage } from '../../lib/images';
+import { uploadImage } from '../../lib/storage';
 import { parseRequest } from '../../lib/upload';
 
 // Disable body-parser for file upload
@@ -12,17 +14,15 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = Date.now();
 
-  const { fields, files } = await parseRequest(req);
+  const { files } = await parseRequest(req);
 
-  const time = typeof fields.time === 'string' ? new Date(fields.time) : null;
-  if (!time) {
-    throw new Error('Missing image time');
-  }
-
-  const savedImage = await saveImage(files.image.path, { time });
+  const file = await uploadImage({
+    image: createReadStream(files.image.path),
+    destination: `live/latest-image.jpg`,
+  });
 
   const endTime = Date.now();
-  console.log(`[upload] ${Math.round(endTime - startTime)}ms`);
+  console.log(`[upload-live] ${Math.round(endTime - startTime)}ms`);
 
-  res.status(200).send({ imageId: savedImage.insertedId });
+  res.status(200).send({ success: true });
 };
