@@ -11,7 +11,7 @@ const LogsQuery = () => {
   });
 
   const logs = data?.logs
-    ?.map(({ time, logs }) => `[${time.replace(/T|Z/g, ' ')}] ${logs}`)
+    ?.map(({ time, logs }) => `[${time.replace(/T|Z/g, ' ')}]\n${logs}`)
     .join('\n');
 
   const logsRef = React.useRef();

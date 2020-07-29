@@ -1,4 +1,4 @@
-const { Db, MongoClient } = require('mongodb');
+const { MongoClient } = require('mongodb');
 const fs = require('fs');
 
 const programPath = `${__dirname}/pi-program`;

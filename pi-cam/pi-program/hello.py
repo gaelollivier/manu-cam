@@ -1,5 +1,5 @@
 import time
 
 while True:
-    print("Hello world v5!!")
+    print("Hello from ManuCam!!")
     time.sleep(1)

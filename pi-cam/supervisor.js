@@ -2,14 +2,13 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
-const baseURL = 'http://localhost:3000/api';
-// const baseURL = 'https://manu-cam.vercel.app/api';
+// const baseURL = 'http://localhost:3000/api';
+const baseURL = 'https://manu-cam.vercel.app/api';
 
 const programURL = `${baseURL}/pi-program`;
 const logsURL = `${baseURL}/pi-logs-upload`;
 
-// const piProgramPath = `${__dirname}/pi-program`;
-const piProgramPath = `${__dirname}/pi-program-test`;
+const piProgramPath = `${__dirname}/pi-program`;
 
 let currentProcess = null;
 let currentProgramVersion = null;
@@ -99,14 +98,20 @@ let refreshing = false;
 
 // Poll API for new programm version
 setInterval(async () => {
-  if (refreshing) {
-    return;
+  try {
+    if (refreshing) {
+      return;
+    }
+
+    refreshing = true;
+
+    await refreshProgram();
+    await sendLogs();
+
+    refreshing = false;
+  } catch (err) {
+    // If any error occurs, make sure to kill process so parent script can restart
+    console.error(err);
+    process.exit(1);
   }
-
-  refreshing = true;
-
-  await refreshProgram();
-  await sendLogs();
-
-  refreshing = false;
 }, 5000);
