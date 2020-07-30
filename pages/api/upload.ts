@@ -14,10 +14,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { fields, files } = await parseRequest(req);
 
-  const time = typeof fields.time === 'string' ? new Date(fields.time) : null;
-  if (!time) {
-    throw new Error('Missing image time');
-  }
+  const time = typeof fields.time === 'string' ? new Date(fields.time) : new Date();
+  // if (!time) {
+  //   throw new Error('Missing image time');
+  // }
 
   const savedImage = await saveImage(files.image.path, { time });
 

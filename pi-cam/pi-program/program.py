@@ -2,7 +2,7 @@ import requests
 import os
 from io import BytesIO
 import picamera
-from time import sleep
+from time import sleep,time
 
 camera = picamera.PiCamera()
 
@@ -13,6 +13,8 @@ camera = picamera.PiCamera()
 uploadUrl = "https://manu-cam.vercel.app/api/upload"
 
 while True:
+    startTime = time()
+
     imageStream = BytesIO()
     # camera.rotation = 0
     camera.resolution = (2028,1520)
@@ -23,13 +25,16 @@ while True:
                             headers={'Authorization': 'Bearer ' + os.environ['MANUCAM_AUTH']},
                             files={'image': imageStream})
         try:
-            print(res.json())
+            endTime = time()
+            print(res.json(), ' [', round(endTime - startTime, 2), 's ]')
         except:
             print("Invalid response")
             print(res.text)
     except Exception as err:
         print("Failed to upload image")
-        print(err)
+        print(err)    
+    
+    os.system('/opt/vc/bin/vcgencmd measure_temp')
     
     # Take 1 picture every 30s
     sleep(30)
