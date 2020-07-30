@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-import { checkAuth } from '../../lib/auth';
 import { runDbQuery } from '../../lib/db';
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await checkAuth(req);
+  // NOTE: Not authenticated... Please don't DDOS me!
 
   const startTime = Date.now();
 
