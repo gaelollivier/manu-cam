@@ -45,7 +45,7 @@ const Images = () => {
             {mainImage && (
               <>
                 <div className="main-image-time">
-                  {mainImage.time.toLocaleString()}
+                  {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
                 </div>
                 <img
                   className="main-image"
@@ -88,7 +88,7 @@ const Images = () => {
 
         .main-view {
           width: 100%;
-          height: calc(100% - 80px);
+          height: calc(100% - 150px);
           position: relative;
         }
 
@@ -109,17 +109,8 @@ const Images = () => {
 
         .controls {
           width: 100%;
-          height: 80px;
+          height: 150px;
           display: flex;
-        }
-
-        .controls-left,
-        .controls-right {
-          width: 80px;
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .images-scroller {

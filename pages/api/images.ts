@@ -12,7 +12,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       .collection('images')
       .find({})
       .sort({ time: -1 })
-      .limit(100)
+      .limit(60)
       .toArray();
   });
 
