@@ -11,8 +11,8 @@ const LARGE_FORMAT: ResizeOptions = {
 
 // Miniature format for fast seeking
 const SMALL_FORMAT: ResizeOptions = {
-  width: 101,
-  height: 76,
+  width: 202,
+  height: 152,
 };
 
 export const saveImage = async (path: string, { time }: { time: Date }) => {

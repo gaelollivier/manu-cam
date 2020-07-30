@@ -1,7 +1,9 @@
 import Head from 'next/head';
+import React from 'react';
 import useSWR, { SWRConfig } from 'swr';
 
 interface File {
+  name: string;
   mediaLink: string;
 }
 
@@ -29,17 +31,107 @@ const useImages = (): { images: Array<Image> } => {
 
 const Images = () => {
   const { images } = useImages();
+  const [selectedImage, selectImage] = React.useState<string | null>(null);
 
-  const latestImage = images[0]?.files;
+  const mainImage: Image | null =
+    (selectedImage && images?.find(({ _id }) => _id === selectedImage)) ??
+    images[0];
 
   return (
     <>
-      {latestImage && (
-        <>
-          <img src={latestImage.large.mediaLink} />
-          <img src={latestImage.small.mediaLink} />
-        </>
-      )}
+      <div className="page">
+        <div className="container">
+          <div className="main-view">
+            {mainImage && (
+              <>
+                <div className="main-image-time">
+                  {mainImage.time.toLocaleString()}
+                </div>
+                <img
+                  className="main-image"
+                  src={`https://storage.googleapis.com/manu-cam-images/${mainImage.files.large.name}`}
+                />
+              </>
+            )}
+          </div>
+          <div className="controls">
+            <div className="images-scroller">
+              {images.map(({ _id, files: { small } }) => (
+                <img
+                  onMouseEnter={() => selectImage(_id)}
+                  key={_id}
+                  src={`https://storage.googleapis.com/manu-cam-images/${small.name}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <style jsx>{`
+        .page {
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .container {
+          border-radius: 15px;
+          width: 80vw;
+          height: 80vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          box-shadow: 0px 20px 38px 2px rgba(163, 163, 163, 0.59);
+        }
+
+        .main-view {
+          width: 100%;
+          height: calc(100% - 80px);
+          position: relative;
+        }
+
+        .main-image-time {
+          position: absolute;
+          top: 5px;
+          left: 5px;
+          background: rgba(255, 255, 255, 0.6);
+          border-radius: 5px;
+          padding: 5px;
+        }
+
+        .main-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .controls {
+          width: 100%;
+          height: 80px;
+          display: flex;
+        }
+
+        .controls-left,
+        .controls-right {
+          width: 80px;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .images-scroller {
+          flex: 1;
+          display: flex;
+          overflow-x: auto;
+        }
+
+        .images-scroller img {
+          height: 100%;
+        }
+      `}</style>
     </>
   );
 };

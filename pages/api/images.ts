@@ -12,8 +12,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     return db
       .collection('images')
       .find({})
-      .sort({ _id: -1 })
-      .limit(10)
+      .sort({ time: -1 })
+      .limit(100)
       .toArray();
   });
 

@@ -36,5 +36,6 @@ while True:
     
     os.system('/opt/vc/bin/vcgencmd measure_temp')
     
-    # Take 1 picture every 30s
-    sleep(30)
+    # Take 1 picture every 60s
+    # NOTE: The interval can't be less than 60s, as we store images as [hh]/[mm]_[format].jpg
+    sleep(60)
