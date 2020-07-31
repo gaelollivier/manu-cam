@@ -1,4 +1,5 @@
 const fs = require('fs');
+const sharp = require('sharp');
 const request = require('request');
 
 (async () => {
@@ -13,12 +14,16 @@ const request = require('request');
       .substr(0, 16)
       .replace('T', '_')
       .replace(/:/g, '-')}.jpg`;
+
     await new Promise((resolve) =>
       request
         .get(image.files.large.mediaLink)
+        // Resize to fix google cloud max image dimensions
+        .pipe(sharp().resize({ height: 1080 }))
         .pipe(fs.createWriteStream(filename))
         .on('close', resolve)
     );
+
     console.log(filename);
   }
 })();
