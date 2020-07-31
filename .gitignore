@@ -27,3 +27,7 @@ yarn-error.log*
 # python
 
 /venv
+
+# data
+
+/tools/images

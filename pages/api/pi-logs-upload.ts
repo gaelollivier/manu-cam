@@ -6,15 +6,20 @@ import { runDbQuery } from '../../lib/db';
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   await checkAuth(req);
 
+  if (!req.body.logs.length) {
+    res.status(200).end();
+    return;
+  }
+
   await runDbQuery(async (db) => {
     await db.collection('pi-logs').insertOne({
       time: new Date(),
       logs: req.body.logs ?? '',
     });
 
-    // Delete logs older than 10min
+    // Delete logs older than 60min
     await db.collection('pi-logs').deleteMany({
-      time: { $lt: new Date(Date.now() - 60 * 10 * 1000) },
+      time: { $lt: new Date(Date.now() - 60 * 60 * 1000) },
     });
   });
 

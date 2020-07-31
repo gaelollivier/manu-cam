@@ -1,33 +1,8 @@
 import Head from 'next/head';
 import React from 'react';
-import useSWR, { SWRConfig } from 'swr';
 
-interface File {
-  name: string;
-  mediaLink: string;
-}
-
-interface Image {
-  _id: string;
-  time: Date;
-  files: {
-    small: File;
-    large: File;
-  };
-}
-
-const useImages = (): { images: Array<Image> } => {
-  const { data } = useSWR('/api/images', {
-    onSuccess: (data) => {
-      console.log({ data });
-    },
-    onError: (error) => {
-      console.log({ error });
-    },
-  });
-
-  return { images: data?.images ?? [] };
-};
+import { SWRProvider } from '../components/SWRProvider';
+import { Image, useImages } from '../lib/useImages';
 
 const Images = () => {
   const { images } = useImages();
@@ -49,7 +24,7 @@ const Images = () => {
                 </div>
                 <img
                   className="main-image"
-                  src={`https://storage.googleapis.com/manu-cam-images/${mainImage.files.large.name}`}
+                  src={mainImage.files.large.mediaLink}
                 />
               </>
             )}
@@ -60,7 +35,7 @@ const Images = () => {
                 <img
                   onMouseEnter={() => selectImage(_id)}
                   key={_id}
-                  src={`https://storage.googleapis.com/manu-cam-images/${small.name}`}
+                  src={small.mediaLink}
                 />
               ))}
             </div>
@@ -104,7 +79,7 @@ const Images = () => {
         .main-image {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
         }
 
         .controls {
@@ -128,29 +103,15 @@ const Images = () => {
 };
 
 export default function Home() {
-  const authToken =
-    typeof window !== 'undefined'
-      ? window.localStorage.getItem('MANUCAM_AUTH')
-      : '';
-
   return (
     <>
       <Head>
         <title>ManuCam</title>
       </Head>
-      <SWRConfig
-        value={{
-          fetcher: (input: RequestInfo, init?: RequestInit) =>
-            fetch(input, {
-              ...(init ?? {}),
-              headers: {
-                Authorization: `Bearer ${authToken}`,
-              },
-            }).then((res) => res.json()),
-        }}
-      >
+
+      <SWRProvider>
         <Images />
-      </SWRConfig>
+      </SWRProvider>
     </>
   );
 }
