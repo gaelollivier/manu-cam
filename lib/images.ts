@@ -16,8 +16,13 @@ const SMALL_FORMAT: ResizeOptions = {
 };
 
 export const saveImage = async (path: string, { time }: { time: Date }) => {
-  // Store in YYYY/MM/DD/HH/mm_[size].jpg
-  const folderPath = time.toISOString().substr(0, 16).replace(/[-T:]/g, '/');
+  // Store in YYYY/MM/DD/HH/mm_ss_[size].jpg
+  const folderPath = time
+    .toISOString()
+    .substr(0, 19)
+    .replace(/[-T]/g, '/')
+    .replace(':', '/')
+    .replace(':', '_');
 
   const files = await Promise.all(
     [
