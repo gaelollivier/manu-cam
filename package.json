@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^5.1.2",
+    "@tensorflow/tfjs-automl": "^1.0.0",
+    "@tensorflow/tfjs-node": "^2.0.1",
     "date-fns": "^2.11.1",
     "formidable": "^1.2.2",
     "gray-matter": "^4.0.2",

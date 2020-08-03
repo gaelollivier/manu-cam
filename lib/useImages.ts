@@ -14,7 +14,14 @@ export interface Image {
   };
 }
 
-export const useImages = (params: string = ''): { images: Array<Image> } => {
+interface ImagesByHour {
+  hour: string;
+  count: number;
+}
+
+export const useImages = (
+  params: string = ''
+): { images: Array<Image>; imagesByHour: Array<ImagesByHour> } => {
   const { data } = useSWR(`/api/images${params}`, {
     onSuccess: (data) => {
       console.log({ data });
@@ -24,5 +31,5 @@ export const useImages = (params: string = ''): { images: Array<Image> } => {
     },
   });
 
-  return { images: data?.images ?? [] };
+  return { images: data?.images ?? [], imagesByHour: data?.imagesByHour ?? [] };
 };

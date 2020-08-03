@@ -5,28 +5,45 @@ import { SWRProvider } from '../components/SWRProvider';
 import { Image, useImages } from '../lib/useImages';
 
 const Images = () => {
-  const { images } = useImages();
+  const { images, imagesByHour } = useImages();
   const [selectedImage, selectImage] = React.useState<string | null>(null);
+  const [selectedHour, selectHour] = React.useState<string | null>(null);
 
   const mainImage: Image | null =
     (selectedImage && images?.find(({ _id }) => _id === selectedImage)) ??
     images[0];
+
+  console.log(selectedHour);
 
   return (
     <>
       <div className="page">
         <div className="container">
           <div className="main-view">
-            {mainImage && (
+            {mainImage ? (
               <>
                 <div className="main-image-time">
-                  {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
+                  <div>
+                    {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
+                  </div>
+                  <div>{mainImage._id}</div>
+                </div>
+                <div className="hour-selector">
+                  <select onChange={(event) => selectHour(event.target.value)}>
+                    {imagesByHour.map(({ hour, count }) => (
+                      <option value={hour}>
+                        {hour} - {count}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <img
                   className="main-image"
                   src={mainImage.files.large.mediaLink}
                 />
               </>
+            ) : (
+              <div className="main-view loading">Loading...</div>
             )}
           </div>
           <div className="controls">
@@ -53,8 +70,8 @@ const Images = () => {
 
         .container {
           border-radius: 15px;
-          width: 80vw;
-          height: 80vh;
+          width: 90vw;
+          height: 90vh;
           display: flex;
           flex-direction: column;
           overflow: hidden;
@@ -67,6 +84,11 @@ const Images = () => {
           position: relative;
         }
 
+        .main-view.loading {
+          text-align: center;
+          padding-top: 60px;
+        }
+
         .main-image-time {
           position: absolute;
           top: 5px;
@@ -74,6 +96,20 @@ const Images = () => {
           background: rgba(255, 255, 255, 0.6);
           border-radius: 5px;
           padding: 5px;
+        }
+
+        .hour-selector select {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          background: rgba(255, 255, 255, 0.6);
+          border-radius: 5px;
+          padding: 5px;
+          border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .hour-selector select:focus {
+          outline: none;
         }
 
         .main-image {

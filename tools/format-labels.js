@@ -10,10 +10,10 @@ const fs = require('fs');
       const line = lineStr.split(',');
       return {
         label: line[0],
-        x1: line[1],
-        y1: line[2],
-        x2: line[3],
-        y2: line[4],
+        x1: Number(line[1]),
+        y1: Number(line[2]),
+        boxWidth: Number(line[3]),
+        boxHeight: Number(line[4]),
         filename: line[5],
         imageWidth: line[6],
         imageHeight: line[7],
@@ -21,22 +21,32 @@ const fs = require('fs');
     });
 
   const newLabels = labels
-    .map(({ label, x1, y1, x2, y2, filename, imageWidth, imageHeight }) =>
-      [
-        // Let gcloud assign the set: TRAIN/VALIDATE/TEST
-        'UNASSIGNED',
-        `gs://manu-cam-training-data/images/${filename}`,
+    .map(
+      ({
         label,
-        // NOTE: gcloud expects normalized coordinates
-        (x1 / imageWidth).toFixed(4),
-        (y1 / imageHeight).toFixed(4),
-        '',
-        '',
-        (x2 / imageWidth).toFixed(4),
-        (y2 / imageHeight).toFixed(4),
-        '',
-        '',
-      ].join(',')
+        x1,
+        y1,
+        boxWidth,
+        boxHeight,
+        filename,
+        imageWidth,
+        imageHeight,
+      }) =>
+        [
+          // Let gcloud assign the set: TRAIN/VALIDATE/TEST
+          'UNASSIGNED',
+          `gs://manu-cam-training-data/images/${filename}`,
+          label,
+          // NOTE: gcloud expects normalized coordinates
+          (x1 / imageWidth).toFixed(4),
+          (y1 / imageHeight).toFixed(4),
+          '',
+          '',
+          ((x1 + boxWidth) / imageWidth).toFixed(4),
+          ((y1 + boxHeight) / imageHeight).toFixed(4),
+          '',
+          '',
+        ].join(',')
     )
     .join('\n');
 
