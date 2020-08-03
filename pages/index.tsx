@@ -4,16 +4,42 @@ import React from 'react';
 import { SWRProvider } from '../components/SWRProvider';
 import { Image, useImages } from '../lib/useImages';
 
+const IMAGE_WIDTH = 2028;
+const IMAGE_HEIGHT = 1520;
+
 const Images = () => {
-  const { images, imagesByHour } = useImages();
+  const [selectedHour, selectHour] = React.useState<string | null>(
+    '2020-07-31 12:00'
+  );
+  const { images, imagesByHour } = useImages(
+    selectedHour ? `?hour=${selectedHour}` : ''
+  );
   const [selectedImage, selectImage] = React.useState<string | null>(null);
-  const [selectedHour, selectHour] = React.useState<string | null>(null);
+  const [manuAIResult, setManuAIResult] = React.useState<any>(null);
+
+  const runManuAI = async (imageId: string) => {
+    const res = await fetch(`/api/manu-ai?imageId=${imageId}`).then((r) =>
+      r.json()
+    );
+    const detectionResult = res.detectionResult[0];
+    if (!detectionResult) {
+      return;
+    }
+    setManuAIResult({
+      box: {
+        top: (detectionResult.box.top / IMAGE_HEIGHT) * 100,
+        left: (detectionResult.box.left / IMAGE_WIDTH) * 100,
+        width: (detectionResult.box.width / IMAGE_WIDTH) * 100,
+        height: (detectionResult.box.height / IMAGE_HEIGHT) * 100,
+      },
+    });
+  };
 
   const mainImage: Image | null =
     (selectedImage && images?.find(({ _id }) => _id === selectedImage)) ??
     images[0];
 
-  console.log(selectedHour);
+  console.log({ manuAIResult });
 
   return (
     <>
@@ -26,12 +52,22 @@ const Images = () => {
                   <div>
                     {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
                   </div>
-                  <div>{mainImage._id}</div>
+                  <div>
+                    <button
+                      className="manu-ai-button"
+                      onClick={() => runManuAI(mainImage._id)}
+                    >
+                      MANU AI
+                    </button>
+                  </div>
                 </div>
                 <div className="hour-selector">
-                  <select onChange={(event) => selectHour(event.target.value)}>
+                  <select
+                    value={selectedHour ?? imagesByHour[0]?.hour ?? ''}
+                    onChange={(event) => selectHour(event.target.value)}
+                  >
                     {imagesByHour.map(({ hour, count }) => (
-                      <option value={hour}>
+                      <option key={hour} value={hour}>
                         {hour} - {count}
                       </option>
                     ))}
@@ -44,6 +80,17 @@ const Images = () => {
               </>
             ) : (
               <div className="main-view loading">Loading...</div>
+            )}
+            {manuAIResult && (
+              <div
+                className="bounding-box"
+                style={{
+                  top: `${manuAIResult.box.top}%`,
+                  left: `${manuAIResult.box.left}%`,
+                  width: `${manuAIResult.box.width}%`,
+                  height: `${manuAIResult.box.height}%`,
+                }}
+              />
             )}
           </div>
           <div className="controls">
@@ -110,6 +157,15 @@ const Images = () => {
 
         .hour-selector select:focus {
           outline: none;
+        }
+
+        .manu-ai-button {
+          cursor: pointer;
+        }
+
+        .bounding-box {
+          position: absolute;
+          border: 2px solid red;
         }
 
         .main-image {

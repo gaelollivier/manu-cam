@@ -2,7 +2,6 @@ import { copyFile, createReadStream } from 'fs';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { checkAuth } from '../../lib/auth';
-import { saveImage } from '../../lib/images';
 import { uploadImage } from '../../lib/storage';
 import { parseRequest } from '../../lib/upload';
 

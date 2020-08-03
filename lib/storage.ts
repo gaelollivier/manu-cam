@@ -34,3 +34,25 @@ export const uploadImage = async ({
 
   return file;
 };
+
+export const getImage = async (imageName: string): Promise<Buffer> => {
+  const storage = new Storage({
+    credentials: JSON.parse(
+      Buffer.from(process.env.GCLOUD_CREDENTIALS, 'base64').toString()
+    ),
+  });
+
+  return new Promise((resolve, reject) => {
+    const buffers: Array<Buffer> = [];
+
+    storage
+      .bucket('manu-cam-images')
+      .file(imageName)
+      .createReadStream()
+      .on('error', reject)
+      .on('end', () => {
+        resolve(Buffer.concat(buffers));
+      })
+      .on('data', (data) => buffers.push(data));
+  });
+};

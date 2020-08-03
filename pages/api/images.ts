@@ -13,11 +13,24 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     200
   );
 
+  const queryHour =
+    typeof req.query.hour === 'string'
+      ? `${req.query.hour.replace(' ', 'T')}Z`
+      : null;
+  const hourFilter = queryHour
+    ? {
+        time: {
+          $gte: new Date(queryHour),
+          $lte: new Date(new Date(queryHour).getTime() + 60 * 60 * 1000),
+        },
+      }
+    : {};
+
   const [latestImages, imagesByHourGroups] = await runDbQuery(async (db) => {
     return Promise.all([
       db
         .collection('images')
-        .find({})
+        .find(hourFilter)
         .sort({ time: -1 })
         .limit(limit)
         .toArray(),
