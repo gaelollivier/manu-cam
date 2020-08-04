@@ -6,8 +6,15 @@ import { Image, useImages } from '../lib/useImages';
 
 const Images = () => {
   const [selectedHour, selectHour] = React.useState<string | null>(null);
+  const [hasManu, setHasManu] = React.useState<boolean>(true);
+
+  const params = [
+    selectedHour && `hour=${selectedHour}`,
+    hasManu && `hasManu=true`,
+  ].filter(Boolean);
+
   const { images, imagesByHour } = useImages(
-    selectedHour ? `?hour=${selectedHour}` : ''
+    params.length ? `?${params.join('&')}` : ''
   );
   const [selectedImage, selectImage] = React.useState<string | null>(null);
 
@@ -34,34 +41,43 @@ const Images = () => {
         <div className="container">
           <div className="main-view">
             {mainImage ? (
-              <>
-                <div className="main-image">
-                  <img src={mainImage.files.large.mediaLink} />
-                  {manuAIBox && (
-                    <div className="bounding-box" style={manuAIBox} />
-                  )}
-                </div>
-                <div className="main-image-time">
-                  <div>
-                    {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
-                  </div>
-                </div>
-                <div className="hour-selector">
-                  <select
-                    value={selectedHour ?? imagesByHour[0]?.hour ?? ''}
-                    onChange={(event) => selectHour(event.target.value)}
-                  >
-                    {imagesByHour.map(({ hour, count }) => (
-                      <option key={hour} value={hour}>
-                        {hour} - {count}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
+              <div className="main-image">
+                <img src={mainImage.files.large.mediaLink} />
+                {manuAIBox && (
+                  <div className="bounding-box" style={manuAIBox} />
+                )}
+              </div>
             ) : (
               <div className="main-view loading">Loading...</div>
             )}
+            <div className="main-image-time">
+              <div>
+                {mainImage?.time.toString().substr(0, 16).replace('T', ' ') ??
+                  ''}
+              </div>
+              <div>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={hasManu}
+                    onChange={(event) => setHasManu(event.target.checked)}
+                  />{' '}
+                  Manu Only
+                </label>
+              </div>
+            </div>
+            <div className="hour-selector">
+              <select
+                value={selectedHour ?? imagesByHour[0]?.hour ?? ''}
+                onChange={(event) => selectHour(event.target.value)}
+              >
+                {imagesByHour.map(({ hour, count }) => (
+                  <option key={hour} value={hour}>
+                    {hour} - {count}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="controls">
             <div className="images-scroller">

@@ -26,7 +26,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       }
     : {};
 
-  const hasDetectionFilter = { manuDetection: { $ne: null } };
+  const hasDetectionFilter = req.query.hasManu
+    ? { manuDetection: { $ne: null } }
+    : {};
 
   const [images, imagesByHourGroups] = await runDbQuery(async (db) => {
     return Promise.all([
