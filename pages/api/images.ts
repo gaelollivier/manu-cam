@@ -26,17 +26,20 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       }
     : {};
 
-  const [latestImages, imagesByHourGroups] = await runDbQuery(async (db) => {
+  const hasDetectionFilter = { manuDetection: { $ne: null } };
+
+  const [images, imagesByHourGroups] = await runDbQuery(async (db) => {
     return Promise.all([
       db
         .collection('images')
-        .find(hourFilter)
+        .find({ ...hourFilter, ...hasDetectionFilter })
         .sort({ time: -1 })
         .limit(limit)
         .toArray(),
       db
         .collection('images')
         .aggregate([
+          { $match: hasDetectionFilter },
           {
             $project: {
               _id: 1,
@@ -80,5 +83,5 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const endTime = Date.now();
   console.log(`[images] ${Math.round(endTime - startTime)}ms`);
 
-  res.status(200).send({ images: latestImages, imagesByHour });
+  res.status(200).send({ images, imagesByHour });
 };

@@ -4,42 +4,29 @@ import React from 'react';
 import { SWRProvider } from '../components/SWRProvider';
 import { Image, useImages } from '../lib/useImages';
 
-const IMAGE_WIDTH = 2028;
-const IMAGE_HEIGHT = 1520;
-
 const Images = () => {
-  const [selectedHour, selectHour] = React.useState<string | null>(
-    '2020-07-31 12:00'
-  );
+  const [selectedHour, selectHour] = React.useState<string | null>(null);
   const { images, imagesByHour } = useImages(
     selectedHour ? `?hour=${selectedHour}` : ''
   );
   const [selectedImage, selectImage] = React.useState<string | null>(null);
-  const [manuAIResult, setManuAIResult] = React.useState<any>(null);
-
-  const runManuAI = async (imageId: string) => {
-    const res = await fetch(`/api/manu-ai?imageId=${imageId}`).then((r) =>
-      r.json()
-    );
-    const detectionResult = res.detectionResult[0];
-    if (!detectionResult) {
-      return;
-    }
-    setManuAIResult({
-      box: {
-        top: (detectionResult.box.top / IMAGE_HEIGHT) * 100,
-        left: (detectionResult.box.left / IMAGE_WIDTH) * 100,
-        width: (detectionResult.box.width / IMAGE_WIDTH) * 100,
-        height: (detectionResult.box.height / IMAGE_HEIGHT) * 100,
-      },
-    });
-  };
 
   const mainImage: Image | null =
     (selectedImage && images?.find(({ _id }) => _id === selectedImage)) ??
     images[0];
 
-  console.log({ manuAIResult });
+  const manuAIBox = mainImage?.manuDetection
+    ? {
+        left: `${mainImage?.manuDetection.x1 * 100}%`,
+        top: `${mainImage?.manuDetection.y1 * 100}%`,
+        width: `${
+          (mainImage?.manuDetection.x2 - mainImage?.manuDetection.x1) * 100
+        }%`,
+        height: `${
+          (mainImage?.manuDetection.y2 - mainImage?.manuDetection.y1) * 100
+        }%`,
+      }
+    : null;
 
   return (
     <>
@@ -48,17 +35,15 @@ const Images = () => {
           <div className="main-view">
             {mainImage ? (
               <>
+                <div className="main-image">
+                  <img src={mainImage.files.large.mediaLink} />
+                  {manuAIBox && (
+                    <div className="bounding-box" style={manuAIBox} />
+                  )}
+                </div>
                 <div className="main-image-time">
                   <div>
                     {mainImage.time.toString().substr(0, 16).replace('T', ' ')}
-                  </div>
-                  <div>
-                    <button
-                      className="manu-ai-button"
-                      onClick={() => runManuAI(mainImage._id)}
-                    >
-                      MANU AI
-                    </button>
                   </div>
                 </div>
                 <div className="hour-selector">
@@ -73,24 +58,9 @@ const Images = () => {
                     ))}
                   </select>
                 </div>
-                <img
-                  className="main-image"
-                  src={mainImage.files.large.mediaLink}
-                />
               </>
             ) : (
               <div className="main-view loading">Loading...</div>
-            )}
-            {manuAIResult && (
-              <div
-                className="bounding-box"
-                style={{
-                  top: `${manuAIResult.box.top}%`,
-                  left: `${manuAIResult.box.left}%`,
-                  width: `${manuAIResult.box.width}%`,
-                  height: `${manuAIResult.box.height}%`,
-                }}
-              />
             )}
           </div>
           <div className="controls">
@@ -129,6 +99,9 @@ const Images = () => {
           width: 100%;
           height: calc(100% - 150px);
           position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .main-view.loading {
@@ -159,19 +132,19 @@ const Images = () => {
           outline: none;
         }
 
-        .manu-ai-button {
-          cursor: pointer;
-        }
-
         .bounding-box {
           position: absolute;
           border: 2px solid red;
         }
 
         .main-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
+          max-width: 100%;
+          max-height: 100%;
+          position: relative;
+        }
+
+        .main-image img {
+          max-height: 70vh;
         }
 
         .controls {
