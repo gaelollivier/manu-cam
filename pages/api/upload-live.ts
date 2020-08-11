@@ -2,6 +2,7 @@ import { copyFile, createReadStream } from 'fs';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { checkAuth } from '../../lib/auth';
+import { runDbQuery } from '../../lib/db';
 import { uploadImage } from '../../lib/storage';
 import { parseRequest } from '../../lib/upload';
 
@@ -9,15 +10,34 @@ import { parseRequest } from '../../lib/upload';
 export const config = { api: { bodyParser: false } };
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await checkAuth(req);
+  checkAuth(req);
 
   const startTime = Date.now();
 
-  const { files } = await parseRequest(req);
+  const { files, fields: manuDetection } = await parseRequest(req);
 
   const file = await uploadImage({
     image: createReadStream(files.image.path),
     destination: `live/latest-image.jpg`,
+  });
+
+  await runDbQuery(async (db) => {
+    await db.collection('live-image').updateOne(
+      {},
+      {
+        $set: {
+          file: file.metadata,
+          manuDetection: {
+            score: parseFloat(manuDetection.score as string) ?? 0,
+            x1: parseFloat(manuDetection.x1 as string) ?? 0,
+            y1: parseFloat(manuDetection.y1 as string) ?? 0,
+            x2: parseFloat(manuDetection.x2 as string) ?? 0,
+            y2: parseFloat(manuDetection.y2 as string) ?? 0,
+          },
+        },
+      },
+      { upsert: true }
+    );
   });
 
   const endTime = Date.now();
