@@ -31,5 +31,5 @@ while True:
         print("Failed to upload image")
         print(err)
     
-    # Take 1 picture every 30s
-    sleep(30)
+    # Delay to avoid taking too many pictures
+    sleep(5)

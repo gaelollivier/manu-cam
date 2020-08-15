@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Startup script, setup in /etc/rc.local
+# Script is located in /home/pi/app/pi-startup.sh
 
 while true
 do

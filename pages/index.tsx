@@ -6,7 +6,7 @@ import { Image, useImages } from '../lib/useImages';
 
 const Images = () => {
   const [selectedHour, selectHour] = React.useState<string | null>(null);
-  const [hasManu, setHasManu] = React.useState<boolean>(true);
+  const [hasManu, setHasManu] = React.useState<boolean>(false);
 
   const params = [
     selectedHour && `hour=${selectedHour}`,

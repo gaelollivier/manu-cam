@@ -20,7 +20,7 @@ interpreter.allocate_tensors()
 camera = picamera.PiCamera()
 
 # camera.rotation = 0
-camera.resolution = (1024,768)
+camera.resolution = (2028,1520)
 
 def setInputImage(image):
     interpreter.set_tensor(interpreter.get_input_details()[0]['index'], [image])
@@ -36,6 +36,7 @@ def detectManu():
     camera.capture(image, 'bgr')
     image = image.array
     # image = cv2.imread('./test.jpg', cv2.IMREAD_COLOR)
+    (_, imageStream) = cv2.imencode('.jpg', image)
 
     # Resize to tensorflow expected size
     image = cv2.resize(image, (512, 512))
@@ -54,9 +55,7 @@ def detectManu():
         'y1': float(bestRect[0]),
         'x2': float(bestRect[3]),
         'y2': float(bestRect[2]),
-    }
-
-    (_, imageStream) = cv2.imencode('.jpg', image)
+    }    
 
     return (imageStream, box)
 
