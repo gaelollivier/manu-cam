@@ -17,25 +17,31 @@ const Live = () => {
     return null;
   }
 
-  const manuAIBox = liveImage?.manuDetection
-    ? {
-        left: `${liveImage?.manuDetection.x1 * 100}%`,
-        top: `${liveImage?.manuDetection.y1 * 100}%`,
-        width: `${
-          (liveImage?.manuDetection.x2 - liveImage?.manuDetection.x1) * 100
-        }%`,
-        height: `${
-          (liveImage?.manuDetection.y2 - liveImage?.manuDetection.y1) * 100
-        }%`,
-      }
-    : null;
+  const manuAIBox =
+    liveImage?.manuDetection?.score > 0.5
+      ? {
+          left: `${liveImage?.manuDetection.x1 * 100}%`,
+          top: `${liveImage?.manuDetection.y1 * 100}%`,
+          width: `${
+            (liveImage?.manuDetection.x2 - liveImage?.manuDetection.x1) * 100
+          }%`,
+          height: `${
+            (liveImage?.manuDetection.y2 - liveImage?.manuDetection.y1) * 100
+          }%`,
+        }
+      : null;
 
   return (
     <>
       <div className="main-image">
-        <img src={liveImage.file.mediaLink} />
+        <img
+          width="1024"
+          height="768"
+          src={`https://storage.googleapis.com/manu-cam-images/live/latest-image.jpg?key=${Math.random()}`}
+        />
         {manuAIBox && <div className="bounding-box" style={manuAIBox} />}
       </div>
+      <pre>{JSON.stringify(liveImage?.manuDetection, null, 4)}</pre>
       <style jsx>{`
         .main-image {
           width: 1024px;

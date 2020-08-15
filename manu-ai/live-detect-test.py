@@ -7,7 +7,6 @@ import picamera
 import requests
 import tensorflow as tf
 from io import BytesIO
-from picamera.array import PiRGBArray
 
 # uploadUrl = "http://192.168.1.49:3000/api/upload-live"
 uploadUrl = "https://manu-cam.vercel.app/api/upload-live"
@@ -31,11 +30,15 @@ def getOutputRects():
 def getOutputScores():
     return interpreter.get_tensor(interpreter.get_output_details()[2]['index'])[0]
 
-def detectManu():
-    image = PiRGBArray(camera)
-    camera.capture(image, 'bgr')
-    image = image.array
-    # image = cv2.imread('./test.jpg', cv2.IMREAD_COLOR)
+def detectManu():    
+   # Capture image in 2 formats: a raw buffer for tensorflow & a jpg stream for uploading
+    # image = np.empty((1024 * 768 * 3,), dtype=np.uint8)
+    # imageStream = BytesIO()
+    # camera.capture(image, 'bgr')
+    # camera.capture(imageStream, format='jpeg', quality=10)
+    image = cv2.imread('./test.jpg', cv2.IMREAD_COLOR)
+
+    # image = image.reshape((1024, 768, 3))
 
     # Resize to tensorflow expected size
     image = cv2.resize(image, (512, 512))
