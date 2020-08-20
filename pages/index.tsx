@@ -170,13 +170,13 @@ const Images = () => {
         }
 
         .images-scroller {
-          flex: 1;
-          display: flex;
-          overflow-x: auto;
+          display: block;
         }
 
         .images-scroller img {
-          height: 100%;
+          display: inline-block;
+          height: 30px;
+          width: 27px;
         }
       `}</style>
     </>

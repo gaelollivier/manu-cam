@@ -36,5 +36,5 @@ while True:
     
     os.system('/opt/vc/bin/vcgencmd measure_temp')
     
-    # Take 1 picture every 60s
-    sleep(60)
+    # Delay to avoid taking too many pictures
+    sleep(10)

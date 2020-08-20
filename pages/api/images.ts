@@ -7,9 +7,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = Date.now();
 
-  // Limit: default 60, max 200
+  // Limit: default 200
   const limit = Math.min(
-    parseInt((req.query.limit as string) ?? '') || 60,
+    parseInt((req.query.limit as string) ?? '') || 200,
     200
   );
 
