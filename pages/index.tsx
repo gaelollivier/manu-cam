@@ -83,8 +83,10 @@ const Images = () => {
             <div className="images-scroller">
               {images.map(({ _id, files: { small } }) => (
                 <img
+                  className="thumbnail"
                   onMouseEnter={() => selectImage(_id)}
                   key={_id}
+                  style={{ width: `${(100 / images.length).toFixed(2)}%` }}
                   src={small.mediaLink}
                 />
               ))}
@@ -170,13 +172,13 @@ const Images = () => {
         }
 
         .images-scroller {
-          display: block;
+          width: 100%;
+          display: flex;
         }
 
-        .images-scroller img {
-          display: inline-block;
-          height: 30px;
-          width: 27px;
+        .images-scroller .thumbnail {
+          display: block;
+          height: 100%;
         }
       `}</style>
     </>
