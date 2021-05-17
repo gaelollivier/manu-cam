@@ -7,10 +7,10 @@ from time import sleep,time
 camera = picamera.PiCamera()
 
 # uploadUrl = "http://192.168.1.49:3000/api/upload-live"
-# uploadUrl = "https://manu-cam.vercel.app/api/upload-live"
+uploadUrl = "https://manu-cam.vercel.app/api/upload-live"
 
 # uploadUrl = "http://192.168.1.49:3000/api/upload"
-uploadUrl = "https://manu-cam.vercel.app/api/upload"
+# uploadUrl = "https://manu-cam.vercel.app/api/upload"
 
 while True:
     startTime = time()
@@ -37,4 +37,4 @@ while True:
     os.system('/opt/vc/bin/vcgencmd measure_temp')
     
     # Delay to avoid taking too many pictures
-    sleep(30)
+    sleep(20)
