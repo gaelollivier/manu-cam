@@ -14,12 +14,12 @@ export interface Image {
   };
   annotations?: {
     hasManu?: boolean;
-    boundingBox?: {
+    boundingBoxes?: Array<{
       x1: number;
       y1: number;
       x2: number;
       y2: number;
-    };
+    }>;
   };
   manuDetection?: {
     score: number;
@@ -48,4 +48,27 @@ export const useImages = (
   });
 
   return { images: data?.images ?? [], imagesByHour: data?.imagesByHour ?? [] };
+};
+
+export const useAnnotationImages = (
+  params: string = ''
+): {
+  images: Array<Image>;
+  totalCount: number;
+  totalMissingAnnotations: number;
+} => {
+  const { data } = useSWR(`/api/annotation-images${params}`, {
+    onSuccess: (data) => {
+      console.log({ data });
+    },
+    onError: (error) => {
+      console.log({ error });
+    },
+  });
+
+  return {
+    images: data?.images ?? [],
+    totalCount: data?.totalCount || 0,
+    totalMissingAnnotations: data?.totalMissingAnnotations || 0,
+  };
 };

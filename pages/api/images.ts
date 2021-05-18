@@ -30,51 +30,45 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     ? { manuDetection: { $ne: null } }
     : {};
 
-  const [images, totalCount, imagesByHourGroups] = await runDbQuery(
-    async (db) => {
-      return Promise.all([
-        db
-          .collection('images')
-          .find({ ...hourFilter, ...hasDetectionFilter })
-          .sort({ time: -1 })
-          .limit(limit)
-          .toArray(),
-        db
-          .collection('images')
-          .find({ ...hourFilter, ...hasDetectionFilter })
-          .count(),
-        db
-          .collection('images')
-          .aggregate([
-            { $match: hasDetectionFilter },
-            {
-              $project: {
-                _id: 1,
-                y: { $year: '$time' },
-                m: { $month: '$time' },
-                d: { $dayOfMonth: '$time' },
-                h: { $hour: '$time' },
-              },
+  const [images, imagesByHourGroups] = await runDbQuery(async (db) => {
+    return Promise.all([
+      db
+        .collection('images')
+        .find({ ...hourFilter, ...hasDetectionFilter })
+        .sort({ time: -1 })
+        .limit(limit)
+        .toArray(),
+      db
+        .collection('images')
+        .aggregate([
+          { $match: hasDetectionFilter },
+          {
+            $project: {
+              _id: 1,
+              y: { $year: '$time' },
+              m: { $month: '$time' },
+              d: { $dayOfMonth: '$time' },
+              h: { $hour: '$time' },
             },
-            {
-              $group: {
-                _id: { year: '$y', month: '$m', day: '$d', hour: '$h' },
-                count: { $sum: 1 },
-              },
+          },
+          {
+            $group: {
+              _id: { year: '$y', month: '$m', day: '$d', hour: '$h' },
+              count: { $sum: 1 },
             },
-            {
-              $sort: {
-                '_id.year': -1,
-                '_id.month': -1,
-                '_id.day': -1,
-                '_id.hour': -1,
-              },
+          },
+          {
+            $sort: {
+              '_id.year': -1,
+              '_id.month': -1,
+              '_id.day': -1,
+              '_id.hour': -1,
             },
-          ])
-          .toArray(),
-      ]);
-    }
-  );
+          },
+        ])
+        .toArray(),
+    ]);
+  });
 
   const imagesByHour = imagesByHourGroups.map(
     ({ _id: { year, month, day, hour }, count }) => {
@@ -91,5 +85,5 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const endTime = Date.now();
   console.log(`[images] ${Math.round(endTime - startTime)}ms`);
 
-  res.status(200).send({ images, imagesByHour, totalCount });
+  res.status(200).send({ images, imagesByHour });
 };
