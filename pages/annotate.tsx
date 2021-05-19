@@ -23,11 +23,13 @@ const getBoxPosition = ({
 };
 
 const useKeyboardHandlers = ({
+  loading,
   onNext,
   onPrev,
   onSave,
   onToggleHasManu,
 }: {
+  loading: boolean;
   onNext: () => void;
   onPrev: () => void;
   onSave: () => void;
@@ -35,7 +37,11 @@ const useKeyboardHandlers = ({
 }) => {
   React.useEffect(() => {
     const handler = (event) => {
-      console.log(event.key);
+      // Prevent changes on loading
+      if (loading) {
+        return;
+      }
+      // console.log(event.key);
       switch (event.key) {
         // case 'Backspace':
         // case 'Space':
@@ -59,61 +65,98 @@ const useKeyboardHandlers = ({
 const IMAGES_LIMIT = 20;
 
 const Images = () => {
-  const [imagesOffset, setImagesOffset] = React.useState(0);
+  const localStorage =
+    typeof window !== 'undefined'
+      ? window.localStorage
+      : { getItem: () => '', setItem: () => {} };
 
-  const { images, totalCount, totalMissingAnnotations } = useAnnotationImages(
-    `?limit=${IMAGES_LIMIT}&offset=${imagesOffset}`
+  const [authToken, setAuthToken] = React.useState(
+    localStorage.getItem('MANU_AUTH_TOKEN')
   );
 
-  const [currentImage, setCurrentImage] = React.useState<Image | null>(null);
+  const [saveLoading, setSaveLoading] = React.useState(false);
 
-  const currentImageOffset = images.indexOf(currentImage);
+  const [imagesOffset, setImagesOffset] = React.useState(0);
+
+  const {
+    images,
+    totalCount,
+    totalMissingAnnotations,
+    revalidate,
+    isValidating,
+  } = useAnnotationImages(`?limit=${IMAGES_LIMIT}&offset=${imagesOffset}`);
+
+  const loading = isValidating || saveLoading;
+
+  const [currentImageOffset, setCurrentImageOffset] = React.useState<number>(0);
+
+  const currentImage = images[currentImageOffset - imagesOffset];
 
   const [currentAnnotations, setCurrentAnnotations] = React.useState<
     Record<string, Image['annotations']>
   >({});
 
+  // Show either local state or image state
+  const currentImagesAnnotations = currentImage
+    ? currentAnnotations[currentImage._id] ?? currentImage.annotations
+    : null;
+
   const handleToggleHasManu = () => {
     setCurrentAnnotations((current) => ({
       ...(current ?? {}),
       [currentImage._id]: {
-        ...(current[currentImage._id] ?? {}),
-        hasManu: !current[currentImage._id]?.hasManu,
+        ...(currentImagesAnnotations ?? {}),
+        hasManu: !currentImagesAnnotations?.hasManu,
       },
     }));
   };
 
   useKeyboardHandlers({
+    loading,
     onNext: () => {
-      const nextImageIndex = currentImageOffset + 1;
-      if (nextImageIndex === images.length) {
+      if (currentImageOffset + 1 >= imagesOffset + IMAGES_LIMIT) {
         setImagesOffset((offset) => offset + IMAGES_LIMIT);
-        setCurrentImage(null);
+        setCurrentImageOffset(currentImageOffset + 1);
       } else {
-        setCurrentImage(images[nextImageIndex]);
+        setCurrentImageOffset(currentImageOffset + 1);
       }
     },
     onPrev: () => {
-      const prevImageIndex = currentImageOffset - 1;
-      if (prevImageIndex < 0) {
-        setImagesOffset((offset) => Math.max(0, offset - IMAGES_LIMIT));
-        setCurrentImage(null);
+      if (currentImageOffset <= 0) {
+        return;
+      }
+      if (currentImageOffset - 1 < imagesOffset) {
+        setImagesOffset((offset) => offset - IMAGES_LIMIT);
+        setCurrentImageOffset(currentImageOffset - 1);
       } else {
-        setCurrentImage(images[prevImageIndex]);
+        setCurrentImageOffset(currentImageOffset - 1);
       }
     },
-    onSave: () => {
+    onSave: async () => {
+      if (loading) {
+        return;
+      }
+
+      setSaveLoading(true);
+      const res = await fetch('/api/save-annotations', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ annotations: currentAnnotations }),
+      })
+        .then((res) => res.json())
+        .catch((err) => {
+          console.error('save-annotations', { err });
+        });
+      console.log('save-annotations', { res });
+      await revalidate();
       setCurrentAnnotations({});
+      setSaveLoading(false);
     },
     onToggleHasManu: handleToggleHasManu,
   });
-
-  // Initialize currentImage base on images
-  React.useEffect(() => {
-    if (!currentImage && images.length) {
-      setCurrentImage(images[0]);
-    }
-  }, [currentImage, images]);
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
@@ -125,12 +168,6 @@ const Images = () => {
     imageSize,
     boundingBox: currentImage.manuDetection,
   });
-
-  console.log(imageSize);
-
-  // Show either local state or image state
-  const currentImagesAnnotations =
-    currentAnnotations[currentImage._id] ?? currentImage.annotations;
 
   return (
     <>
@@ -160,6 +197,7 @@ const Images = () => {
                   {currentImagesAnnotations?.hasManu ? 'HAS MANU' : 'NO MANU'}
                 </button>
               </li>
+              {loading ? <li>Loading...</li> : null}
             </ul>
           </div>
           <div className="info">
@@ -168,9 +206,19 @@ const Images = () => {
               <li>[S]: Save</li>
               <li>To save: {Object.keys(currentAnnotations).length}</li>
               <li>
-                Pagination: {imagesOffset + currentImageOffset} / {totalCount}
+                Pagination: {currentImageOffset + 1} / {totalCount}
               </li>
               <li>Total missing annotations: {totalMissingAnnotations}</li>
+              <li>
+                Auth:{' '}
+                <input
+                  value={authToken}
+                  onChange={(e) => {
+                    setAuthToken(e.target.value);
+                    localStorage.setItem('MANU_AUTH_TOKEN', e.target.value);
+                  }}
+                />
+              </li>
             </ul>
           </div>
         </div>

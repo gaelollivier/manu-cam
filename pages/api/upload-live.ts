@@ -1,4 +1,4 @@
-import { copyFile, createReadStream } from 'fs';
+import { createReadStream } from 'fs';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { checkAuth } from '../../lib/auth';

@@ -20,7 +20,7 @@ export const uploadImage = async ({
 
   // Start upload
   // See: https://googleapis.dev/nodejs/storage/latest/File.html#createWriteStream
-  await new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     image
       .pipe(
         file.createWriteStream({

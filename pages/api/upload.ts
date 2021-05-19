@@ -8,7 +8,7 @@ import { parseRequest } from '../../lib/upload';
 export const config = { api: { bodyParser: false } };
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await checkAuth(req);
+  checkAuth(req);
 
   const startTime = Date.now();
 

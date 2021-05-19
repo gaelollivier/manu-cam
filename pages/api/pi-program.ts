@@ -4,7 +4,7 @@ import { checkAuth } from '../../lib/auth';
 import { runDbQuery } from '../../lib/db';
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await checkAuth(req);
+  checkAuth(req);
 
   const piProgram = await runDbQuery(async (db) => {
     return db.collection('pi-program').findOne({});

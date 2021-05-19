@@ -4,7 +4,7 @@ import { checkAuth } from '../../lib/auth';
 import { runDbQuery } from '../../lib/db';
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await checkAuth(req);
+  checkAuth(req);
 
   if (!req.body.logs.length) {
     res.status(200).end();

@@ -56,19 +56,26 @@ export const useAnnotationImages = (
   images: Array<Image>;
   totalCount: number;
   totalMissingAnnotations: number;
+  revalidate: () => Promise<boolean>;
+  isValidating: boolean;
 } => {
-  const { data } = useSWR(`/api/annotation-images${params}`, {
-    onSuccess: (data) => {
-      console.log({ data });
-    },
-    onError: (error) => {
-      console.log({ error });
-    },
-  });
+  const { data, revalidate, isValidating } = useSWR(
+    `/api/annotation-images${params}`,
+    {
+      onSuccess: (data) => {
+        // console.log('annotation-images', { data });
+      },
+      onError: (error) => {
+        console.log('annotation-images', { error });
+      },
+    }
+  );
 
   return {
     images: data?.images ?? [],
     totalCount: data?.totalCount || 0,
     totalMissingAnnotations: data?.totalMissingAnnotations || 0,
+    revalidate,
+    isValidating,
   };
 };
