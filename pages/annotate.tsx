@@ -2,9 +2,10 @@ import Head from 'next/head';
 import React from 'react';
 
 import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
+import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
-import { useElementSize } from '../lib/useElementSize';
-import { Image, useAnnotationImages, useImages } from '../lib/useImages';
+import { useElementSize } from '../components/useElementSize';
+import { Image, useAnnotationImages } from '../components/useImages';
 
 const getBoxPosition = ({
   imageSize,
@@ -21,6 +22,14 @@ const getBoxPosition = ({
         height: `${(boundingBox.y2 - boundingBox.y1) * imageSize.height}px`,
       }
     : null;
+};
+
+const getRange = (start: number, end: number, increment: number) => {
+  const res = [];
+  for (let current = start; current <= end; current += increment) {
+    res.push(current);
+  }
+  return res;
 };
 
 const useKeyboardHandlers = ({
@@ -44,9 +53,13 @@ const useKeyboardHandlers = ({
       }
       // console.log(event.key);
       switch (event.key) {
-        case 'n':
+        case 'ArrowDown':
           // Mark "no manu" & go to next image
           onToggleHasManu(event, false);
+          return onNext();
+        case 'ArrowUp':
+          // Mark "has manu" & go to next image
+          onToggleHasManu(event, true);
           return onNext();
         // case 'Space':
         // case 'Enter':
@@ -128,6 +141,11 @@ const Images = () => {
     }
   };
 
+  const handleGoToOffset = (newOffset: number) => {
+    setImagesOffset(newOffset);
+    setCurrentImageOffset(newOffset);
+  };
+
   const handlePrev = () => {
     if (currentImageOffset <= 0) {
       return;
@@ -174,27 +192,27 @@ const Images = () => {
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
-  if (!images.length || !currentImage) {
-    return <div>Loading...</div>;
-  }
-
-  const boxPosition = getBoxPosition({
-    imageSize,
-    boundingBox: currentImage.manuDetection,
-  });
+  const boxPosition = currentImage
+    ? getBoxPosition({
+        imageSize,
+        boundingBox: currentImage.manuDetection,
+      })
+    : null;
 
   return (
     <>
       <div className="page">
         <div className="image-container">
-          <BoundingBoxAnnotationTool>
-            <img
-              key={currentImage._id}
-              ref={imageRef}
-              className="image"
-              src={currentImage.files.large.mediaLink}
-            />
-          </BoundingBoxAnnotationTool>
+          {currentImage ? (
+            <BoundingBoxAnnotationTool>
+              <img
+                key={currentImage._id}
+                ref={imageRef}
+                className="image"
+                src={currentImage.files.large.mediaLink}
+              />
+            </BoundingBoxAnnotationTool>
+          ) : null}
           {boxPosition && <div className="bounding-box" style={boxPosition} />}
         </div>
         <div className="annotation-menu">
@@ -220,15 +238,30 @@ const Images = () => {
                 </>
               ) : null}
               {loading ? <li>Loading...</li> : null}
+              <PreloadImages images={images} />
             </ul>
           </div>
           <div className="info">
             <ul>
               <li>⬅️ ➡️ Prev / Next image</li>
+              <li>⬇️ Mark as "No manu" and skip</li>
+              <li>⬆️ Mark as "Has manu" and skip</li>
               <li>[S]: Save</li>
               <li>To save: {Object.keys(currentAnnotations).length}</li>
               <li>
-                Pagination: {currentImageOffset + 1} / {totalCount}
+                Pagination: {currentImageOffset + 1} / {totalCount}{' '}
+                <select
+                  onChange={(e) => handleGoToOffset(Number(e.target.value))}
+                  value={String(imagesOffset)}
+                >
+                  {getRange(
+                    0,
+                    totalCount - (totalCount % IMAGES_LIMIT),
+                    IMAGES_LIMIT
+                  ).map((value) => (
+                    <option key={value}>{value}</option>
+                  ))}
+                </select>
               </li>
               <li>Total missing annotations: {totalMissingAnnotations}</li>
               <li>

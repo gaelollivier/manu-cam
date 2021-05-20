@@ -2,7 +2,7 @@ import Head from 'next/head';
 import React from 'react';
 
 import { SWRProvider } from '../components/SWRProvider';
-import { Image, useImages } from '../lib/useImages';
+import { Image, useImages } from '../components/useImages';
 
 const Images = () => {
   const [selectedHour, selectHour] = React.useState<string | null>(null);

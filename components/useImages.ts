@@ -1,4 +1,4 @@
-import useSWR, { SWRConfig } from 'swr';
+import useSWR from 'swr';
 
 export interface File {
   name: string;
@@ -62,6 +62,7 @@ export const useAnnotationImages = (
   const { data, revalidate, isValidating } = useSWR(
     `/api/annotation-images${params}`,
     {
+      revalidateOnFocus: false,
       onSuccess: (data) => {
         // console.log('annotation-images', { data });
       },

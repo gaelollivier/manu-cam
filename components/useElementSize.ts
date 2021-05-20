@@ -5,6 +5,10 @@ export function useElementSize<ElementType extends HTMLElement>() {
   const [size, setSize] = React.useState({ width: null, height: null });
 
   const updateState = (element: ElementType) => {
+    if (!element) {
+      return;
+    }
+
     const clientRect = element.getBoundingClientRect();
     if (clientRect.width !== size.width || clientRect.height !== size.height) {
       setSize({

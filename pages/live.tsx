@@ -3,7 +3,7 @@ import * as React from 'react';
 import useSWR from 'swr';
 
 import { SWRProvider } from '../components/SWRProvider';
-import { File, Image } from '../lib/useImages';
+import { File, Image } from '../components/useImages';
 
 const Live = () => {
   const { data } = useSWR(`/api/live`, {
