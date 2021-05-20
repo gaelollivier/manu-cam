@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import React from 'react';
 
+import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
 import { SWRProvider } from '../components/SWRProvider';
 import { useElementSize } from '../lib/useElementSize';
 import { Image, useAnnotationImages, useImages } from '../lib/useImages';
@@ -33,7 +34,7 @@ const useKeyboardHandlers = ({
   onNext: () => void;
   onPrev: () => void;
   onSave: () => void;
-  onToggleHasManu: () => void;
+  onToggleHasManu: (_event: React.SyntheticEvent, hasManu?: boolean) => void;
 }) => {
   React.useEffect(() => {
     const handler = (event) => {
@@ -43,7 +44,10 @@ const useKeyboardHandlers = ({
       }
       // console.log(event.key);
       switch (event.key) {
-        // case 'Backspace':
+        case 'n':
+          // Mark "no manu" & go to next image
+          onToggleHasManu(event, false);
+          return onNext();
         // case 'Space':
         // case 'Enter':
         case 's':
@@ -53,7 +57,7 @@ const useKeyboardHandlers = ({
         case 'ArrowRight':
           return onNext();
         case ' ':
-          return onToggleHasManu();
+          return onToggleHasManu(event);
         default:
       }
     };
@@ -101,60 +105,70 @@ const Images = () => {
     ? currentAnnotations[currentImage._id] ?? currentImage.annotations
     : null;
 
-  const handleToggleHasManu = () => {
+  const handleToggleHasManu = (
+    _event: React.SyntheticEvent,
+    hasManu?: boolean
+  ) => {
     setCurrentAnnotations((current) => ({
       ...(current ?? {}),
       [currentImage._id]: {
         ...(currentImagesAnnotations ?? {}),
-        hasManu: !currentImagesAnnotations?.hasManu,
+        hasManu:
+          hasManu !== undefined ? hasManu : !currentImagesAnnotations?.hasManu,
       },
     }));
   };
 
+  const handleNext = () => {
+    if (currentImageOffset + 1 >= imagesOffset + IMAGES_LIMIT) {
+      setImagesOffset((offset) => offset + IMAGES_LIMIT);
+      setCurrentImageOffset(currentImageOffset + 1);
+    } else {
+      setCurrentImageOffset(currentImageOffset + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentImageOffset <= 0) {
+      return;
+    }
+    if (currentImageOffset - 1 < imagesOffset) {
+      setImagesOffset((offset) => offset - IMAGES_LIMIT);
+      setCurrentImageOffset(currentImageOffset - 1);
+    } else {
+      setCurrentImageOffset(currentImageOffset - 1);
+    }
+  };
+
+  const handleSave = async () => {
+    if (loading) {
+      return;
+    }
+
+    setSaveLoading(true);
+    const res = await fetch('/api/save-annotations', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ annotations: currentAnnotations }),
+    })
+      .then((res) => res.json())
+      .catch((err) => {
+        console.error('save-annotations', { err });
+      });
+    console.log('save-annotations', { res });
+    await revalidate();
+    setCurrentAnnotations({});
+    setSaveLoading(false);
+  };
+
   useKeyboardHandlers({
     loading,
-    onNext: () => {
-      if (currentImageOffset + 1 >= imagesOffset + IMAGES_LIMIT) {
-        setImagesOffset((offset) => offset + IMAGES_LIMIT);
-        setCurrentImageOffset(currentImageOffset + 1);
-      } else {
-        setCurrentImageOffset(currentImageOffset + 1);
-      }
-    },
-    onPrev: () => {
-      if (currentImageOffset <= 0) {
-        return;
-      }
-      if (currentImageOffset - 1 < imagesOffset) {
-        setImagesOffset((offset) => offset - IMAGES_LIMIT);
-        setCurrentImageOffset(currentImageOffset - 1);
-      } else {
-        setCurrentImageOffset(currentImageOffset - 1);
-      }
-    },
-    onSave: async () => {
-      if (loading) {
-        return;
-      }
-
-      setSaveLoading(true);
-      const res = await fetch('/api/save-annotations', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ annotations: currentAnnotations }),
-      })
-        .then((res) => res.json())
-        .catch((err) => {
-          console.error('save-annotations', { err });
-        });
-      console.log('save-annotations', { res });
-      await revalidate();
-      setCurrentAnnotations({});
-      setSaveLoading(false);
-    },
+    onNext: handleNext,
+    onPrev: handlePrev,
+    onSave: handleSave,
     onToggleHasManu: handleToggleHasManu,
   });
 
@@ -173,12 +187,14 @@ const Images = () => {
     <>
       <div className="page">
         <div className="image-container">
-          <img
-            key={currentImage._id}
-            ref={imageRef}
-            className="image"
-            src={currentImage.files.large.mediaLink}
-          />
+          <BoundingBoxAnnotationTool>
+            <img
+              key={currentImage._id}
+              ref={imageRef}
+              className="image"
+              src={currentImage.files.large.mediaLink}
+            />
+          </BoundingBoxAnnotationTool>
           {boxPosition && <div className="bounding-box" style={boxPosition} />}
         </div>
         <div className="annotation-menu">
