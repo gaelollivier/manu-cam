@@ -66,7 +66,7 @@ const useKeyboardHandlers = ({
   });
 };
 
-const IMAGES_LIMIT = 20;
+const IMAGES_LIMIT = 100;
 
 const Images = () => {
   const localStorage =
@@ -200,19 +200,25 @@ const Images = () => {
         <div className="annotation-menu">
           <div className="actions">
             <ul>
-              <li>
-                <button
-                  style={{
-                    color: 'white',
-                    backgroundColor: currentImagesAnnotations?.hasManu
-                      ? '#52aa4f'
-                      : '#bd4747',
-                  }}
-                  onClick={handleToggleHasManu}
-                >
-                  {currentImagesAnnotations?.hasManu ? 'HAS MANU' : 'NO MANU'}
-                </button>
-              </li>
+              {currentImagesAnnotations ? (
+                <>
+                  <li>
+                    <button
+                      style={{
+                        color: 'white',
+                        backgroundColor: currentImagesAnnotations?.hasManu
+                          ? '#52aa4f'
+                          : '#bd4747',
+                      }}
+                      onClick={handleToggleHasManu}
+                    >
+                      {currentImagesAnnotations?.hasManu
+                        ? 'HAS MANU'
+                        : 'NO MANU'}
+                    </button>
+                  </li>
+                </>
+              ) : null}
               {loading ? <li>Loading...</li> : null}
             </ul>
           </div>
