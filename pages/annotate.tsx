@@ -5,16 +5,20 @@ import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTo
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useElementSize } from '../components/useElementSize';
-import { Image, useAnnotationImages } from '../components/useImages';
+import {
+  BoundingBox,
+  Image,
+  useAnnotationImages,
+} from '../components/useImages';
 
 const getBoxPosition = ({
   imageSize,
   boundingBox,
 }: {
-  imageSize: { width?: number; height?: number };
-  boundingBox?: Image['manuDetection'];
+  imageSize: null | { width: number; height: number };
+  boundingBox?: BoundingBox;
 }) => {
-  return boundingBox?.score > 0.5 && imageSize.width && imageSize.height
+  return boundingBox && imageSize
     ? {
         left: `${boundingBox.x1 * imageSize.width}px`,
         top: `${boundingBox.y1 * imageSize.height}px`,
@@ -38,15 +42,17 @@ const useKeyboardHandlers = ({
   onPrev,
   onSave,
   onToggleHasManu,
+  onRemoveBoundingBox,
 }: {
   loading: boolean;
   onNext: () => void;
   onPrev: () => void;
   onSave: () => void;
-  onToggleHasManu: (_event: React.SyntheticEvent, hasManu?: boolean) => void;
+  onToggleHasManu: (_event: Event, hasManu?: boolean) => void;
+  onRemoveBoundingBox: (_event: Event) => void;
 }) => {
   React.useEffect(() => {
-    const handler = (event) => {
+    const handler = (event: KeyboardEvent) => {
       // Prevent changes on loading
       if (loading) {
         return;
@@ -71,6 +77,8 @@ const useKeyboardHandlers = ({
           return onNext();
         case ' ':
           return onToggleHasManu(event);
+        case 'Escape':
+          return onRemoveBoundingBox(event);
         default:
       }
     };
@@ -95,13 +103,32 @@ const Images = () => {
 
   const [imagesOffset, setImagesOffset] = React.useState(0);
 
-  const {
-    images,
-    totalCount,
-    totalMissingAnnotations,
-    revalidate,
-    isValidating,
-  } = useAnnotationImages(`?limit=${IMAGES_LIMIT}&offset=${imagesOffset}`);
+  const [settings, setSettings] = React.useState({
+    aiBox: false,
+    annotatedBox: true,
+    autoNextOnBoundingBox: false,
+    filterMissingAnnotations: false,
+    filterMissingBoundingBoxes: false,
+  });
+
+  const handleDisplaySettingToggle =
+    (settingKey: keyof typeof settings) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const checked = event.target.checked;
+      setSettings((settings) => ({
+        ...settings,
+        [settingKey]: checked,
+      }));
+    };
+
+  const { images, totalCount, revalidate, isValidating } = useAnnotationImages(
+    `?${[
+      `limit=${IMAGES_LIMIT}`,
+      `offset=${imagesOffset}`,
+      `filterMissingAnnotations=${settings.filterMissingAnnotations}`,
+      `filterMissingBoundingBoxes=${settings.filterMissingBoundingBoxes}`,
+    ].join('&')}`
+  );
 
   const loading = isValidating || saveLoading;
 
@@ -118,16 +145,38 @@ const Images = () => {
     ? currentAnnotations[currentImage._id] ?? currentImage.annotations
     : null;
 
-  const handleToggleHasManu = (
-    _event: React.SyntheticEvent,
-    hasManu?: boolean
-  ) => {
+  const handleToggleHasManu = (_event: Event, hasManu?: boolean) => {
     setCurrentAnnotations((current) => ({
       ...(current ?? {}),
       [currentImage._id]: {
         ...(currentImagesAnnotations ?? {}),
         hasManu:
           hasManu !== undefined ? hasManu : !currentImagesAnnotations?.hasManu,
+      },
+    }));
+  };
+
+  const handleNewBoundingBox = (bBox: BoundingBox) => {
+    setCurrentAnnotations((current) => ({
+      ...(current ?? {}),
+      [currentImage._id]: {
+        ...(currentImagesAnnotations ?? {}),
+        // NOTE: For now, we only support a single box per frame. We can add support for adding/removing
+        // of multiple boxes later
+        boundingBoxes: [bBox],
+      },
+    }));
+    if (settings.autoNextOnBoundingBox) {
+      handleNext();
+    }
+  };
+
+  const handleRemoveBoundingBox = () => {
+    setCurrentAnnotations((current) => ({
+      ...(current ?? {}),
+      [currentImage._id]: {
+        ...(currentImagesAnnotations ?? {}),
+        boundingBoxes: [],
       },
     }));
   };
@@ -188,23 +237,30 @@ const Images = () => {
     onPrev: handlePrev,
     onSave: handleSave,
     onToggleHasManu: handleToggleHasManu,
+    onRemoveBoundingBox: handleRemoveBoundingBox,
   });
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
-  const boxPosition = currentImage
-    ? getBoxPosition({
-        imageSize,
-        boundingBox: currentImage.manuDetection,
-      })
-    : null;
+  const aiBox = getBoxPosition({
+    imageSize,
+    boundingBox: currentImage?.manuDetection,
+  });
+
+  const annotatedBox = getBoxPosition({
+    imageSize,
+    boundingBox: currentImagesAnnotations?.boundingBoxes?.[0],
+  });
 
   return (
     <>
       <div className="page">
         <div className="image-container">
           {currentImage ? (
-            <BoundingBoxAnnotationTool>
+            <BoundingBoxAnnotationTool
+              imageSize={imageSize}
+              onBoundingBox={handleNewBoundingBox}
+            >
               <img
                 key={currentImage._id}
                 ref={imageRef}
@@ -213,7 +269,12 @@ const Images = () => {
               />
             </BoundingBoxAnnotationTool>
           ) : null}
-          {boxPosition && <div className="bounding-box" style={boxPosition} />}
+          {settings.annotatedBox && annotatedBox && (
+            <div className="bounding-box" style={annotatedBox} />
+          )}
+          {settings.aiBox && aiBox && (
+            <div className="bounding-box ai-box" style={aiBox} />
+          )}
         </div>
         <div className="annotation-menu">
           <div className="actions">
@@ -228,15 +289,86 @@ const Images = () => {
                           ? '#52aa4f'
                           : '#bd4747',
                       }}
-                      onClick={handleToggleHasManu}
+                      onClick={(event) =>
+                        handleToggleHasManu(event.nativeEvent)
+                      }
                     >
                       {currentImagesAnnotations?.hasManu
                         ? 'HAS MANU'
                         : 'NO MANU'}
                     </button>
                   </li>
+                  {currentImagesAnnotations.boundingBoxes?.length ? (
+                    <li>
+                      <button onClick={handleRemoveBoundingBox}>
+                        Delete BoundingBox
+                      </button>
+                    </li>
+                  ) : null}
                 </>
-              ) : null}
+              ) : (
+                <>
+                  {currentImage ? (
+                    <li>Use [SPACE] to toggle "Has Manu" flag</li>
+                  ) : null}
+                </>
+              )}
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.aiBox}
+                    onChange={handleDisplaySettingToggle('aiBox')}
+                  />{' '}
+                  Show AI Box
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.annotatedBox}
+                    onChange={handleDisplaySettingToggle('annotatedBox')}
+                  />{' '}
+                  Show Annotated Box
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoNextOnBoundingBox}
+                    onChange={handleDisplaySettingToggle(
+                      'autoNextOnBoundingBox'
+                    )}
+                  />{' '}
+                  Auto Next on Bounding Box
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.filterMissingAnnotations}
+                    onChange={handleDisplaySettingToggle(
+                      'filterMissingAnnotations'
+                    )}
+                  />{' '}
+                  Filter for missing annotations
+                </label>
+              </li>
+              <li>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={settings.filterMissingBoundingBoxes}
+                    onChange={handleDisplaySettingToggle(
+                      'filterMissingBoundingBoxes'
+                    )}
+                  />{' '}
+                  Filter for missing bounding box
+                </label>
+              </li>
               {loading ? <li>Loading...</li> : null}
               <PreloadImages images={images} />
             </ul>
@@ -246,6 +378,8 @@ const Images = () => {
               <li>⬅️ ➡️ Prev / Next image</li>
               <li>⬇️ Mark as "No manu" and skip</li>
               <li>⬆️ Mark as "Has manu" and skip</li>
+              <li>[SPACE]: Toggle "Has Manu"</li>
+              <li>[ESC]: Remove Bounding Box</li>
               <li>[S]: Save</li>
               <li>To save: {Object.keys(currentAnnotations).length}</li>
               <li>
@@ -263,11 +397,10 @@ const Images = () => {
                   ))}
                 </select>
               </li>
-              <li>Total missing annotations: {totalMissingAnnotations}</li>
               <li>
                 Auth:{' '}
                 <input
-                  value={authToken}
+                  value={authToken ?? ''}
                   onChange={(e) => {
                     setAuthToken(e.target.value);
                     localStorage.setItem('MANU_AUTH_TOKEN', e.target.value);
@@ -289,6 +422,10 @@ const Images = () => {
           margin-bottom: 12px;
         }
 
+        button {
+          margin: 2px 0px;
+        }
+
         .image-container {
           flex: 1;
           position: relative;
@@ -300,7 +437,11 @@ const Images = () => {
 
         .bounding-box {
           position: absolute;
-          border: solid 2px red;
+          outline: solid 2px red;
+        }
+
+        .ai-box {
+          outline: solid 2px blue;
         }
 
         .annotation-menu {

@@ -5,6 +5,13 @@ export interface File {
   mediaLink: string;
 }
 
+export interface BoundingBox {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export interface Image {
   _id: string;
   time: Date;
@@ -14,19 +21,10 @@ export interface Image {
   };
   annotations?: {
     hasManu?: boolean;
-    boundingBoxes?: Array<{
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-    }>;
+    boundingBoxes?: Array<BoundingBox>;
   };
-  manuDetection?: {
+  manuDetection?: BoundingBox & {
     score: number;
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
   };
 }
 
@@ -55,7 +53,6 @@ export const useAnnotationImages = (
 ): {
   images: Array<Image>;
   totalCount: number;
-  totalMissingAnnotations: number;
   revalidate: () => Promise<boolean>;
   isValidating: boolean;
 } => {
@@ -75,7 +72,6 @@ export const useAnnotationImages = (
   return {
     images: data?.images ?? [],
     totalCount: data?.totalCount || 0,
-    totalMissingAnnotations: data?.totalMissingAnnotations || 0,
     revalidate,
     isValidating,
   };

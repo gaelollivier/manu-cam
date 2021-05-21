@@ -1,21 +1,29 @@
 import React from 'react';
 
+import { BoundingBox } from './useImages';
+
 const getBoundingBox = (
   startPoint: { x: number; y: number },
-  endPoint: { x: number; y: number }
+  endPoint: { x: number; y: number },
+  // if provided, normalizes bounding box
+  imageSize?: null | { width: number; height: number }
 ) => {
   return {
-    x1: Math.min(startPoint.x, endPoint.x),
-    y1: Math.min(startPoint.y, endPoint.y),
-    x2: Math.max(startPoint.x, endPoint.x),
-    y2: Math.max(startPoint.y, endPoint.y),
+    x1: Math.min(startPoint.x, endPoint.x) / (imageSize?.width || 1),
+    y1: Math.min(startPoint.y, endPoint.y) / (imageSize?.height || 1),
+    x2: Math.max(startPoint.x, endPoint.x) / (imageSize?.width || 1),
+    y2: Math.max(startPoint.y, endPoint.y) / (imageSize?.height || 1),
   };
 };
 
 export const BoundingBoxAnnotationTool = ({
   children,
+  onBoundingBox,
+  imageSize,
 }: {
   children: React.ReactNode;
+  onBoundingBox: (boundingBox: BoundingBox) => void;
+  imageSize: null | { width: number; height: number };
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const boxRef = React.useRef<HTMLDivElement>(null);
@@ -23,7 +31,7 @@ export const BoundingBoxAnnotationTool = ({
   const yGuideRef = React.useRef<HTMLDivElement>(null);
   const mousePositionRef = React.useRef({ x: 0, y: 0 });
   const [currentBoxStartPoint, setCurrentBoxStartPoint] =
-    React.useState<{ x: number; y: number }>(null);
+    React.useState<null | { x: number; y: number }>(null);
 
   const getRelativeMousePos = () => {
     if (!containerRef.current) {
@@ -46,7 +54,12 @@ export const BoundingBoxAnnotationTool = ({
   }, []);
 
   const drawBox = React.useCallback(() => {
-    if (!containerRef.current || !boxRef.current) {
+    if (
+      !containerRef.current ||
+      !boxRef.current ||
+      !xGuideRef.current ||
+      !yGuideRef.current
+    ) {
       window.requestAnimationFrame(drawBox);
       return;
     }
@@ -78,7 +91,7 @@ export const BoundingBoxAnnotationTool = ({
     document.addEventListener('mousemove', handleMouseMove);
     window.requestAnimationFrame(drawBox);
     return () => {
-      document.removeEventListener('mousemouve', handleMouseMove);
+      document.removeEventListener('mousemove', handleMouseMove);
     };
   }, [handleMouseMove, drawBox]);
 
@@ -86,6 +99,9 @@ export const BoundingBoxAnnotationTool = ({
     if (!currentBoxStartPoint) {
       setCurrentBoxStartPoint(getRelativeMousePos());
     } else {
+      onBoundingBox(
+        getBoundingBox(currentBoxStartPoint, getRelativeMousePos(), imageSize)
+      );
       setCurrentBoxStartPoint(null);
     }
   };

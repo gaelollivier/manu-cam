@@ -13,23 +13,40 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     200
   );
 
+  const filterMissingBoundingBoxes =
+    req.query.filterMissingBoundingBoxes === 'true'
+      ? {
+          'annotations.hasManu': true,
+          'annotations.boundingBoxes.x1': null,
+        }
+      : {};
+
+  const filterMissingAnnotations =
+    req.query.filterMissingAnnotations === 'true'
+      ? {
+          annotations: null,
+        }
+      : {};
+
   const offset = parseInt((req.query.offset as string) ?? '') || 0;
 
-  const [images, totalCount, totalMissingAnnotations] = await runDbQuery(
-    async (db) => {
-      return Promise.all([
-        db
-          .collection('images')
-          .find()
-          .sort({ time: 1 })
-          .skip(offset)
-          .limit(limit)
-          .toArray(),
-        db.collection('images').find().count(),
-        db.collection('images').find({ annotations: null }).count(),
-      ]);
-    }
-  );
+  const filters = {
+    ...filterMissingBoundingBoxes,
+    ...filterMissingAnnotations,
+  };
+
+  const [images, totalCount] = await runDbQuery(async (db) => {
+    return Promise.all([
+      db
+        .collection('images')
+        .find(filters)
+        .sort({ time: 1 })
+        .skip(offset)
+        .limit(limit)
+        .toArray(),
+      db.collection('images').find(filters).count(),
+    ]);
+  });
 
   const endTime = Date.now();
   console.log(`[annotation-images] ${Math.round(endTime - startTime)}ms`);
@@ -37,6 +54,5 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   res.status(200).send({
     images,
     totalCount,
-    totalMissingAnnotations,
   });
 };
