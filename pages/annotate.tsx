@@ -226,6 +226,13 @@ const Images = () => {
         console.error('save-annotations', { err });
       });
     console.log('save-annotations', { res });
+    // If we use a filter, move back to image 0 after a save
+    if (
+      settings.filterMissingAnnotations ||
+      settings.filterMissingAnnotations
+    ) {
+      handleGoToOffset(0);
+    }
     await revalidate();
     setCurrentAnnotations({});
     setSaveLoading(false);
