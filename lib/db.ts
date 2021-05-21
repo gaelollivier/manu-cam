@@ -9,7 +9,7 @@ export const getDb = (): Promise<Db> => {
     return cachedClient;
   }
 
-  cachedClient = new MongoClient(process.env.MONGO_URL, {
+  cachedClient = new MongoClient(process.env.MONGO_URL ?? '', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

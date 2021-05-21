@@ -19,7 +19,7 @@ const Images = () => {
   const [selectedImage, selectImage] = React.useState<string | null>(null);
 
   const mainImage: Image | null =
-    (selectedImage && images?.find(({ _id }) => _id === selectedImage)) ??
+    (selectedImage ? images?.find(({ _id }) => _id === selectedImage) : null) ??
     images[0];
 
   const manuAIBox = mainImage?.manuDetection

@@ -12,15 +12,16 @@ const LogsQuery = () => {
 
   const logs = data?.logs
     ?.map(
-      ({ time, logs }) => `[${time.replace('T', ' ').substr(0, 19)}]\n${logs}`
+      ({ time, logs }: any) =>
+        `[${time.replace('T', ' ').substr(0, 19)}]\n${logs}`
     )
     .join('\n');
 
-  const logsRef = React.useRef();
+  const logsRef = React.useRef<HTMLPreElement>(null);
 
   React.useEffect(() => {
     if (logsRef.current) {
-      (logsRef.current as any).scrollTop = (logsRef.current as any).scrollHeight;
+      logsRef.current.scrollTop = logsRef.current.scrollHeight;
     }
   });
 

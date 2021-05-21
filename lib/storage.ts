@@ -11,7 +11,7 @@ export const uploadImage = async ({
 }) => {
   const storage = new Storage({
     credentials: JSON.parse(
-      Buffer.from(process.env.GCLOUD_CREDENTIALS, 'base64').toString()
+      Buffer.from(process.env.GCLOUD_CREDENTIALS ?? '', 'base64').toString()
     ),
   });
 
@@ -38,7 +38,7 @@ export const uploadImage = async ({
 export const getImage = async (imageName: string): Promise<Buffer> => {
   const storage = new Storage({
     credentials: JSON.parse(
-      Buffer.from(process.env.GCLOUD_CREDENTIALS, 'base64').toString()
+      Buffer.from(process.env.GCLOUD_CREDENTIALS ?? '', 'base64').toString()
     ),
   });
 

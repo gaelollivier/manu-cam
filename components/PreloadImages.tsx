@@ -28,7 +28,7 @@ export const PreloadImages = ({ images }: { images: Array<Image> }) => {
     return () => {
       canceled = true;
       imgElements.forEach((img) => {
-        img.src = null;
+        img.src = "";
       });
     };
   }, [images]);

@@ -18,15 +18,15 @@ const Live = () => {
   }
 
   const manuAIBox =
-    liveImage?.manuDetection?.score > 0.5
+    liveImage?.manuDetection && liveImage.manuDetection.score > 0.5
       ? {
-          left: `${liveImage?.manuDetection.x1 * 100}%`,
-          top: `${liveImage?.manuDetection.y1 * 100}%`,
+          left: `${liveImage.manuDetection.x1 * 100}%`,
+          top: `${liveImage.manuDetection.y1 * 100}%`,
           width: `${
-            (liveImage?.manuDetection.x2 - liveImage?.manuDetection.x1) * 100
+            (liveImage.manuDetection.x2 - liveImage.manuDetection.x1) * 100
           }%`,
           height: `${
-            (liveImage?.manuDetection.y2 - liveImage?.manuDetection.y1) * 100
+            (liveImage.manuDetection.y2 - liveImage.manuDetection.y1) * 100
           }%`,
         }
       : null;
