@@ -19,7 +19,7 @@ interface SaveAnnotationsBody {
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-  checkAuth(req);
+  const { isGuest } = checkAuth(req);
 
   const startTime = Date.now();
 
@@ -32,7 +32,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
     Object.entries(annotations).forEach(([imageId, annotations]) => {
       bulk.find({ _id: new ObjectId(imageId) }).updateOne({
-        $set: { annotations },
+        $set: { annotations, toReview: isGuest },
       });
     });
 
