@@ -229,7 +229,7 @@ const Images = () => {
     // If we use a filter, move back to image 0 after a save
     if (
       settings.filterMissingAnnotations ||
-      settings.filterMissingAnnotations
+      settings.filterMissingBoundingBoxes
     ) {
       handleGoToOffset(0);
     }
