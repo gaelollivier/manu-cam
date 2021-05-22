@@ -320,6 +320,12 @@ const Images = () => {
                   ) : null}
                 </>
               )}
+              {currentImage ? (
+                <li>
+                  Current image:{' '}
+                  {new Date(currentImage.time).toISOString().substr(0, 19)}
+                </li>
+              ) : null}
               <li>
                 <label>
                   <input
@@ -439,7 +445,7 @@ const Images = () => {
         }
 
         .image {
-          max-height: 100vh;
+          max-height: calc(100vh - 10px);
         }
 
         .bounding-box {
