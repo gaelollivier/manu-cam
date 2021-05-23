@@ -17,7 +17,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     req.query.filterMissingBoundingBoxes === 'true'
       ? {
           'annotations.hasManu': true,
-          'annotations.boundingBoxes.x1': null,
+          $or: [
+            { 'annotations.boundingBoxes': null },
+            { 'annotations.boundingBoxes': [] },
+          ],
         }
       : {};
 
