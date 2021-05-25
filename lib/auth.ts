@@ -1,12 +1,15 @@
 import { NextApiRequest } from 'next';
 
-export const checkAuth = (req: NextApiRequest): { isGuest: boolean } => {
+export const checkAuth = (
+  req: NextApiRequest,
+  options: { allowGuest?: boolean } = {}
+): { isGuest: boolean } => {
+  const { allowGuest = true } = options;
+
   const requestToken =
     req.headers.authorization?.match(/Bearer (.+)/)?.[1] ?? '';
 
-  console.log(requestToken, process.env.MANUCAM_AUTH_GUEST);
-
-  if (requestToken === process.env.MANUCAM_AUTH_GUEST) {
+  if (allowGuest && requestToken === process.env.MANUCAM_AUTH_GUEST) {
     return { isGuest: true };
   }
 
