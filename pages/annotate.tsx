@@ -11,6 +11,14 @@ import {
   useAnnotationImages,
 } from '../components/useImages';
 
+const FILTERS_VIEWS = [
+  { label: 'All', value: '' },
+  { label: 'Missing annotation', value: 'missingAnnotation' },
+  { label: 'Missing Bounding Box', value: 'missingBoundingBox' },
+  { label: 'Skipped', value: 'skipped' },
+  { label: 'Has bounding box', value: 'hasBoundingBox' },
+];
+
 const getBoxPosition = ({
   imageSize,
   boundingBox,
@@ -107,9 +115,14 @@ const Images = () => {
     aiBox: false,
     annotatedBox: true,
     autoNextOnBoundingBox: false,
-    filterMissingAnnotations: false,
-    filterMissingBoundingBoxes: false,
   });
+
+  const [filtersView, setFiltersView] = React.useState('');
+
+  const handleFiltersViewChange = (newView: string) => {
+    setFiltersView(newView);
+    handleGoToOffset(0);
+  };
 
   const handleDisplaySettingToggle =
     (settingKey: keyof typeof settings) =>
@@ -125,8 +138,7 @@ const Images = () => {
     `?${[
       `limit=${IMAGES_LIMIT}`,
       `offset=${imagesOffset}`,
-      `filterMissingAnnotations=${settings.filterMissingAnnotations}`,
-      `filterMissingBoundingBoxes=${settings.filterMissingBoundingBoxes}`,
+      `filtersView=${filtersView}`,
     ].join('&')}`
   );
 
@@ -154,6 +166,23 @@ const Images = () => {
           hasManu !== undefined ? hasManu : !currentImagesAnnotations?.hasManu,
       },
     }));
+  };
+
+  const handleToggleSkipped = (_event: Event) => {
+    const newValue = !(
+      currentAnnotations[currentImage._id] ?? currentImagesAnnotations
+    )?.skipped;
+    setCurrentAnnotations((current) => ({
+      ...(current ?? {}),
+      [currentImage._id]: {
+        ...(currentImagesAnnotations ?? {}),
+        skipped: newValue,
+      },
+    }));
+    if (newValue) {
+      // Automatically move to next when skipping
+      handleNext();
+    }
   };
 
   const handleNewBoundingBox = (bBox: BoundingBox) => {
@@ -227,10 +256,7 @@ const Images = () => {
       });
     console.log('save-annotations', { res });
     // If we use a filter, move back to image 0 after a save
-    if (
-      settings.filterMissingAnnotations ||
-      settings.filterMissingBoundingBoxes
-    ) {
+    if (filtersView !== '') {
       handleGoToOffset(0);
     }
     await revalidate();
@@ -304,6 +330,15 @@ const Images = () => {
                         ? 'HAS MANU'
                         : 'NO MANU'}
                     </button>
+                    <button
+                      onClick={(event) =>
+                        handleToggleSkipped(event.nativeEvent)
+                      }
+                    >
+                      {currentImagesAnnotations?.skipped
+                        ? 'SKIPPED'
+                        : 'NOT SKIPPED'}
+                    </button>
                   </li>
                   {currentImagesAnnotations.boundingBoxes?.length ? (
                     <li>
@@ -359,28 +394,17 @@ const Images = () => {
                 </label>
               </li>
               <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={settings.filterMissingAnnotations}
-                    onChange={handleDisplaySettingToggle(
-                      'filterMissingAnnotations'
-                    )}
-                  />{' '}
-                  Filter for missing annotations
-                </label>
-              </li>
-              <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={settings.filterMissingBoundingBoxes}
-                    onChange={handleDisplaySettingToggle(
-                      'filterMissingBoundingBoxes'
-                    )}
-                  />{' '}
-                  Filter for missing bounding box
-                </label>
+                Filters:{' '}
+                <select
+                  onChange={(e) => handleFiltersViewChange(e.target.value)}
+                  value={filtersView}
+                >
+                  {FILTERS_VIEWS.map(({ label, value }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
               </li>
               {loading ? <li>Loading...</li> : null}
               <PreloadImages images={images} />
@@ -436,7 +460,7 @@ const Images = () => {
         }
 
         button {
-          margin: 2px 0px;
+          margin: 2px;
         }
 
         .image-container {

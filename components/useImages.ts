@@ -21,6 +21,7 @@ export interface Image {
   };
   annotations?: {
     hasManu?: boolean;
+    skipped?: boolean;
     boundingBoxes?: Array<BoundingBox>;
   };
   manuDetection?: BoundingBox & {

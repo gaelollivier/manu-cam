@@ -2,6 +2,29 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 import { runDbQuery } from '../../lib/db';
 
+const FILTERS_PRESET = {
+  missingBoundingBox: {
+    'annotations.hasManu': true,
+    $or: [
+      { 'annotations.boundingBoxes': null },
+      { 'annotations.boundingBoxes': [] },
+    ],
+    'annotations.skipped': { $ne: true },
+  },
+  missingAnnotation: {
+    annotations: null,
+  },
+  skipped: {
+    'annotations.skipped': true,
+  },
+  hasBoundingBox: {
+    $and: [
+      { 'annotations.boundingBoxes': { $ne: null } },
+      { 'annotations.boundingBoxes': { $ne: [] } },
+    ],
+  },
+};
+
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   // NOTE: Not authenticated... Please don't DDOS me!
 
@@ -13,30 +36,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     200
   );
 
-  const filterMissingBoundingBoxes =
-    req.query.filterMissingBoundingBoxes === 'true'
-      ? {
-          'annotations.hasManu': true,
-          $or: [
-            { 'annotations.boundingBoxes': null },
-            { 'annotations.boundingBoxes': [] },
-          ],
-        }
-      : {};
-
-  const filterMissingAnnotations =
-    req.query.filterMissingAnnotations === 'true'
-      ? {
-          annotations: null,
-        }
-      : {};
-
   const offset = parseInt((req.query.offset as string) ?? '') || 0;
 
-  const filters = {
-    ...filterMissingBoundingBoxes,
-    ...filterMissingAnnotations,
-  };
+  const filtersView =
+    (req.query.filtersView as keyof typeof FILTERS_PRESET) ?? '';
+
+  const filters = FILTERS_PRESET[filtersView] ?? {};
 
   const [images, totalCount] = await runDbQuery(async (db) => {
     return Promise.all([
