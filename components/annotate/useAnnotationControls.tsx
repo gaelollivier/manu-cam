@@ -96,6 +96,14 @@ export const useAnnotationControls = ({
           <button onClick={handleRemoveBoundingBox}>Delete BoundingBox</button>
         </li>
       ) : null}
+      <style jsx>{`
+        button {
+          margin: 2px;
+          border: none;
+          border-radius: 3px;
+          padding: 8px;
+        }
+      `}</style>
     </>
   ) : null;
 

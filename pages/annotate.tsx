@@ -197,10 +197,6 @@ const Images = () => {
           margin-bottom: 12px;
         }
 
-        button {
-          margin: 2px;
-        }
-
         .image-container {
           flex: 1;
           position: relative;
@@ -227,12 +223,6 @@ const Images = () => {
 
         .annotation-menu .actions {
           flex: 1;
-        }
-
-        .annotation-menu .actions button {
-          border: none;
-          border-radius: 3px;
-          padding: 8px;
         }
       `}</style>
     </>
