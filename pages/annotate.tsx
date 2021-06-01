@@ -1,23 +1,21 @@
 import Head from 'next/head';
 import React from 'react';
 
+import { useAnnotationControls } from '../components/annotate/useAnnotationControls';
+import { useAnnotationSettings } from '../components/annotate/useAnnotationSettings';
+import { useFiltersViews } from '../components/annotate/useFiltersViews';
+import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
+import { usePagination } from '../components/annotate/usePagination';
 import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
+import { useAuthToken } from '../components/useAuthToken';
 import { useElementSize } from '../components/useElementSize';
 import {
   BoundingBox,
   Image,
   useAnnotationImages,
 } from '../components/useImages';
-
-const FILTERS_VIEWS = [
-  { label: 'All', value: '' },
-  { label: 'Missing annotation', value: 'missingAnnotation' },
-  { label: 'Missing Bounding Box', value: 'missingBoundingBox' },
-  { label: 'Skipped', value: 'skipped' },
-  { label: 'Has bounding box', value: 'hasBoundingBox' },
-];
 
 const getBoxPosition = ({
   imageSize,
@@ -36,205 +34,45 @@ const getBoxPosition = ({
     : null;
 };
 
-const getRange = (start: number, end: number, increment: number) => {
-  const res = [];
-  for (let current = start; current <= end; current += increment) {
-    res.push(current);
-  }
-  return res;
-};
-
-const useKeyboardHandlers = ({
-  loading,
-  onNext,
-  onPrev,
-  onSave,
-  onToggleHasManu,
-  onRemoveBoundingBox,
-}: {
-  loading: boolean;
-  onNext: () => void;
-  onPrev: () => void;
-  onSave: () => void;
-  onToggleHasManu: (_event: Event, hasManu?: boolean) => void;
-  onRemoveBoundingBox: (_event: Event) => void;
-}) => {
-  React.useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      // Prevent changes on loading
-      if (loading) {
-        return;
-      }
-      // console.log(event.key);
-      switch (event.key) {
-        case 'ArrowDown':
-          // Mark "no manu" & go to next image
-          onToggleHasManu(event, false);
-          return onNext();
-        case 'ArrowUp':
-          // Mark "has manu" & go to next image
-          onToggleHasManu(event, true);
-          return onNext();
-        // case 'Space':
-        // case 'Enter':
-        case 's':
-          return onSave();
-        case 'ArrowLeft':
-          return onPrev();
-        case 'ArrowRight':
-          return onNext();
-        case ' ':
-          return onToggleHasManu(event);
-        case 'Escape':
-          return onRemoveBoundingBox(event);
-        default:
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  });
-};
-
-const IMAGES_LIMIT = 100;
-
 const Images = () => {
-  const localStorage =
-    typeof window !== 'undefined'
-      ? window.localStorage
-      : { getItem: () => '', setItem: () => {} };
-
-  const [authToken, setAuthToken] = React.useState(
-    localStorage.getItem('MANU_AUTH_TOKEN')
-  );
+  const { authToken, authField } = useAuthToken();
 
   const [saveLoading, setSaveLoading] = React.useState(false);
 
-  const [imagesOffset, setImagesOffset] = React.useState(0);
+  const {
+    paginationParams,
+    getCurrentImage,
+    goToOffset,
+    prevImage,
+    nextImage,
+    getPaginationControls,
+  } = usePagination();
 
-  const [settings, setSettings] = React.useState({
-    aiBox: false,
-    annotatedBox: true,
-    autoNextOnBoundingBox: false,
-  });
+  const { filtersView, filtersViewControls } = useFiltersViews({ goToOffset });
 
-  const [filtersView, setFiltersView] = React.useState('');
-
-  const handleFiltersViewChange = (newView: string) => {
-    setFiltersView(newView);
-    handleGoToOffset(0);
-  };
-
-  const handleDisplaySettingToggle =
-    (settingKey: keyof typeof settings) =>
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const checked = event.target.checked;
-      setSettings((settings) => ({
-        ...settings,
-        [settingKey]: checked,
-      }));
-    };
+  const { settingsControls, settings } = useAnnotationSettings();
 
   const { images, totalCount, revalidate, isValidating } = useAnnotationImages(
-    `?${[
-      `limit=${IMAGES_LIMIT}`,
-      `offset=${imagesOffset}`,
-      `filtersView=${filtersView}`,
-    ].join('&')}`
+    `?${[paginationParams, `filtersView=${filtersView}`].join('&')}`
   );
 
   const loading = isValidating || saveLoading;
 
-  const [currentImageOffset, setCurrentImageOffset] = React.useState<number>(0);
+  const currentImage = getCurrentImage(images);
 
-  const currentImage = images[currentImageOffset - imagesOffset];
-
-  const [currentAnnotations, setCurrentAnnotations] = React.useState<
-    Record<string, Image['annotations']>
-  >({});
-
-  // Show either local state or image state
-  const currentImagesAnnotations = currentImage
-    ? currentAnnotations[currentImage._id] ?? currentImage.annotations
-    : null;
-
-  const handleToggleHasManu = (_event: Event, hasManu?: boolean) => {
-    setCurrentAnnotations((current) => ({
-      ...(current ?? {}),
-      [currentImage._id]: {
-        ...(currentImagesAnnotations ?? {}),
-        hasManu:
-          hasManu !== undefined ? hasManu : !currentImagesAnnotations?.hasManu,
-      },
-    }));
-  };
-
-  const handleToggleSkipped = (_event: Event) => {
-    const newValue = !(
-      currentAnnotations[currentImage._id] ?? currentImagesAnnotations
-    )?.skipped;
-    setCurrentAnnotations((current) => ({
-      ...(current ?? {}),
-      [currentImage._id]: {
-        ...(currentImagesAnnotations ?? {}),
-        skipped: newValue,
-      },
-    }));
-    if (newValue) {
-      // Automatically move to next when skipping
-      handleNext();
-    }
-  };
-
-  const handleNewBoundingBox = (bBox: BoundingBox) => {
-    setCurrentAnnotations((current) => ({
-      ...(current ?? {}),
-      [currentImage._id]: {
-        ...(currentImagesAnnotations ?? {}),
-        // NOTE: For now, we only support a single box per frame. We can add support for adding/removing
-        // of multiple boxes later
-        boundingBoxes: [bBox],
-      },
-    }));
-    if (settings.autoNextOnBoundingBox) {
-      handleNext();
-    }
-  };
-
-  const handleRemoveBoundingBox = () => {
-    setCurrentAnnotations((current) => ({
-      ...(current ?? {}),
-      [currentImage._id]: {
-        ...(currentImagesAnnotations ?? {}),
-        boundingBoxes: [],
-      },
-    }));
-  };
-
-  const handleNext = () => {
-    if (currentImageOffset + 1 >= imagesOffset + IMAGES_LIMIT) {
-      setImagesOffset((offset) => offset + IMAGES_LIMIT);
-      setCurrentImageOffset(currentImageOffset + 1);
-    } else {
-      setCurrentImageOffset(currentImageOffset + 1);
-    }
-  };
-
-  const handleGoToOffset = (newOffset: number) => {
-    setImagesOffset(newOffset);
-    setCurrentImageOffset(newOffset);
-  };
-
-  const handlePrev = () => {
-    if (currentImageOffset <= 0) {
-      return;
-    }
-    if (currentImageOffset - 1 < imagesOffset) {
-      setImagesOffset((offset) => offset - IMAGES_LIMIT);
-      setCurrentImageOffset(currentImageOffset - 1);
-    } else {
-      setCurrentImageOffset(currentImageOffset - 1);
-    }
-  };
+  const {
+    currentAnnotations,
+    resetCurrentAnnotations,
+    imageAnnotationControls,
+    annotatedBoundingBoxes,
+    handleToggleHasManu,
+    handleRemoveBoundingBox,
+    handleNewBoundingBox,
+  } = useAnnotationControls({
+    currentImage,
+    nextImage,
+    autoNextOnBoundingBox: settings.autoNextOnBoundingBox,
+  });
 
   const handleSave = async () => {
     if (loading) {
@@ -257,17 +95,17 @@ const Images = () => {
     console.log('save-annotations', { res });
     // If we use a filter, move back to image 0 after a save
     if (filtersView !== '') {
-      handleGoToOffset(0);
+      goToOffset(0);
     }
     await revalidate();
-    setCurrentAnnotations({});
+    resetCurrentAnnotations();
     setSaveLoading(false);
   };
 
   useKeyboardHandlers({
     loading,
-    onNext: handleNext,
-    onPrev: handlePrev,
+    onNext: () => nextImage({ totalCount }),
+    onPrev: prevImage,
     onSave: handleSave,
     onToggleHasManu: handleToggleHasManu,
     onRemoveBoundingBox: handleRemoveBoundingBox,
@@ -282,7 +120,7 @@ const Images = () => {
 
   const annotatedBox = getBoxPosition({
     imageSize,
-    boundingBox: currentImagesAnnotations?.boundingBoxes?.[0],
+    boundingBox: annotatedBoundingBoxes[0],
   });
 
   return (
@@ -312,42 +150,8 @@ const Images = () => {
         <div className="annotation-menu">
           <div className="actions">
             <ul>
-              {currentImagesAnnotations ? (
-                <>
-                  <li>
-                    <button
-                      style={{
-                        color: 'white',
-                        backgroundColor: currentImagesAnnotations?.hasManu
-                          ? '#52aa4f'
-                          : '#bd4747',
-                      }}
-                      onClick={(event) =>
-                        handleToggleHasManu(event.nativeEvent)
-                      }
-                    >
-                      {currentImagesAnnotations?.hasManu
-                        ? 'HAS MANU'
-                        : 'NO MANU'}
-                    </button>
-                    <button
-                      onClick={(event) =>
-                        handleToggleSkipped(event.nativeEvent)
-                      }
-                    >
-                      {currentImagesAnnotations?.skipped
-                        ? 'SKIPPED'
-                        : 'NOT SKIPPED'}
-                    </button>
-                  </li>
-                  {currentImagesAnnotations.boundingBoxes?.length ? (
-                    <li>
-                      <button onClick={handleRemoveBoundingBox}>
-                        Delete BoundingBox
-                      </button>
-                    </li>
-                  ) : null}
-                </>
+              {imageAnnotationControls ? (
+                imageAnnotationControls
               ) : (
                 <>
                   {currentImage ? (
@@ -361,51 +165,8 @@ const Images = () => {
                   {new Date(currentImage.time).toISOString().substr(0, 19)}
                 </li>
               ) : null}
-              <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={settings.aiBox}
-                    onChange={handleDisplaySettingToggle('aiBox')}
-                  />{' '}
-                  Show AI Box
-                </label>
-              </li>
-              <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={settings.annotatedBox}
-                    onChange={handleDisplaySettingToggle('annotatedBox')}
-                  />{' '}
-                  Show Annotated Box
-                </label>
-              </li>
-              <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={settings.autoNextOnBoundingBox}
-                    onChange={handleDisplaySettingToggle(
-                      'autoNextOnBoundingBox'
-                    )}
-                  />{' '}
-                  Auto Next on Bounding Box
-                </label>
-              </li>
-              <li>
-                Filters:{' '}
-                <select
-                  onChange={(e) => handleFiltersViewChange(e.target.value)}
-                  value={filtersView}
-                >
-                  {FILTERS_VIEWS.map(({ label, value }) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </li>
+              {settingsControls}
+              <li>Filters: {filtersViewControls}</li>
               {loading ? <li>Loading...</li> : null}
               <PreloadImages images={images} />
             </ul>
@@ -419,31 +180,8 @@ const Images = () => {
               <li>[ESC]: Remove Bounding Box</li>
               <li>[S]: Save</li>
               <li>To save: {Object.keys(currentAnnotations).length}</li>
-              <li>
-                Pagination: {currentImageOffset + 1} / {totalCount}{' '}
-                <select
-                  onChange={(e) => handleGoToOffset(Number(e.target.value))}
-                  value={String(imagesOffset)}
-                >
-                  {getRange(
-                    0,
-                    totalCount - (totalCount % IMAGES_LIMIT),
-                    IMAGES_LIMIT
-                  ).map((value) => (
-                    <option key={value}>{value}</option>
-                  ))}
-                </select>
-              </li>
-              <li>
-                Auth:{' '}
-                <input
-                  value={authToken ?? ''}
-                  onChange={(e) => {
-                    setAuthToken(e.target.value);
-                    localStorage.setItem('MANU_AUTH_TOKEN', e.target.value);
-                  }}
-                />
-              </li>
+              <li>Pagination: {getPaginationControls({ totalCount })}</li>
+              <li>Auth: {authField}</li>
             </ul>
           </div>
         </div>
