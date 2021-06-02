@@ -1,7 +1,10 @@
 import Head from 'next/head';
 import React from 'react';
 
-import { useAnnotationControls } from '../components/annotate/useAnnotationControls';
+import {
+  getBoundingBoxColor,
+  useAnnotationControls,
+} from '../components/annotate/useAnnotationControls';
 import { useAnnotationSettings } from '../components/annotate/useAnnotationSettings';
 import { useFiltersViews } from '../components/annotate/useFiltersViews';
 import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
@@ -16,13 +19,16 @@ import {
   Image,
   useAnnotationImages,
 } from '../components/useImages';
+import { isDefined } from '../lib/utils';
 
-const getBoxPosition = ({
+const getBoxStyle = ({
   imageSize,
   boundingBox,
+  index,
 }: {
   imageSize: null | { width: number; height: number };
   boundingBox?: BoundingBox;
+  index?: number;
 }) => {
   return boundingBox && imageSize
     ? {
@@ -30,6 +36,7 @@ const getBoxPosition = ({
         top: `${boundingBox.y1 * imageSize.height}px`,
         width: `${(boundingBox.x2 - boundingBox.x1) * imageSize.width}px`,
         height: `${(boundingBox.y2 - boundingBox.y1) * imageSize.height}px`,
+        outlineColor: index != null ? getBoundingBoxColor(index) : 'red',
       }
     : null;
 };
@@ -108,20 +115,25 @@ const Images = () => {
     onPrev: prevImage,
     onSave: handleSave,
     onToggleHasManu: handleToggleHasManu,
-    onRemoveBoundingBox: handleRemoveBoundingBox,
+    onRemoveBoundingBox: handleRemoveBoundingBox(),
   });
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
-  const aiBox = getBoxPosition({
+  const aiBox = getBoxStyle({
     imageSize,
     boundingBox: currentImage?.manuDetection,
   });
 
-  const annotatedBox = getBoxPosition({
-    imageSize,
-    boundingBox: annotatedBoundingBoxes[0],
-  });
+  const annotatedBoxes = annotatedBoundingBoxes
+    .map((boundingBox, index) =>
+      getBoxStyle({
+        imageSize,
+        boundingBox,
+        index,
+      })
+    )
+    .filter(isDefined);
 
   return (
     <>
@@ -140,9 +152,10 @@ const Images = () => {
               />
             </BoundingBoxAnnotationTool>
           ) : null}
-          {settings.annotatedBox && annotatedBox && (
-            <div className="bounding-box" style={annotatedBox} />
-          )}
+          {settings.annotatedBox &&
+            annotatedBoxes.map((annotatedBox, index) => (
+              <div key={index} className="bounding-box" style={annotatedBox} />
+            ))}
           {settings.aiBox && aiBox && (
             <div className="bounding-box ai-box" style={aiBox} />
           )}

@@ -2,6 +2,11 @@ import React from 'react';
 
 import { BoundingBox, Image } from '../useImages';
 
+const BOUNDING_BOXES_COLORS = ['red', '#00FF00', 'blue', 'yellow'];
+
+export const getBoundingBoxColor = (boxIndex: number) =>
+  BOUNDING_BOXES_COLORS[boxIndex % BOUNDING_BOXES_COLORS.length];
+
 export const useAnnotationControls = ({
   currentImage,
   nextImage,
@@ -53,9 +58,10 @@ export const useAnnotationControls = ({
       ...(current ?? {}),
       [currentImage?._id ?? '']: {
         ...(currentImagesAnnotations ?? {}),
-        // NOTE: For now, we only support a single box per frame. We can add support for adding/removing
-        // of multiple boxes later
-        boundingBoxes: [bBox],
+        boundingBoxes: [
+          ...(currentImagesAnnotations?.boundingBoxes ?? []),
+          bBox,
+        ],
       },
     }));
     if (autoNextOnBoundingBox) {
@@ -63,15 +69,24 @@ export const useAnnotationControls = ({
     }
   };
 
-  const handleRemoveBoundingBox = () => {
-    setCurrentAnnotations((current) => ({
-      ...(current ?? {}),
-      [currentImage?._id ?? '']: {
-        ...(currentImagesAnnotations ?? {}),
-        boundingBoxes: [],
-      },
-    }));
+  const handleRemoveBoundingBox = (boxToRemove?: BoundingBox) => () => {
+    setCurrentAnnotations((current) => {
+      const currentBoundingBoxes =
+        currentImagesAnnotations?.boundingBoxes ?? [];
+
+      return {
+        ...(current ?? {}),
+        [currentImage?._id ?? '']: {
+          ...(currentImagesAnnotations ?? {}),
+          boundingBoxes: boxToRemove
+            ? currentBoundingBoxes.filter((box) => box !== boxToRemove)
+            : currentBoundingBoxes.slice(0, -1),
+        },
+      };
+    });
   };
+
+  const annotatedBoundingBoxes = currentImagesAnnotations?.boundingBoxes ?? [];
 
   const imageAnnotationControls = currentImagesAnnotations ? (
     <>
@@ -93,7 +108,16 @@ export const useAnnotationControls = ({
       </li>
       {currentImagesAnnotations.boundingBoxes?.length ? (
         <li>
-          <button onClick={handleRemoveBoundingBox}>Delete BoundingBox</button>
+          Bounding Boxes:
+          {currentImagesAnnotations.boundingBoxes?.map((boundingBox, index) => (
+            <button
+              key={index}
+              onClick={handleRemoveBoundingBox(boundingBox)}
+              style={{ backgroundColor: getBoundingBoxColor(index) }}
+            >
+              x
+            </button>
+          ))}
         </li>
       ) : null}
       <style jsx>{`
@@ -106,8 +130,6 @@ export const useAnnotationControls = ({
       `}</style>
     </>
   ) : null;
-
-  const annotatedBoundingBoxes = currentImagesAnnotations?.boundingBoxes ?? [];
 
   return {
     currentAnnotations,
