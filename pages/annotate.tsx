@@ -14,11 +14,7 @@ import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useAuthToken } from '../components/useAuthToken';
 import { useElementSize } from '../components/useElementSize';
-import {
-  BoundingBox,
-  Image,
-  useAnnotationImages,
-} from '../components/useImages';
+import { BoundingBox, useAnnotationImages } from '../components/useImages';
 import { isDefined } from '../lib/utils';
 
 const getBoxStyle = ({

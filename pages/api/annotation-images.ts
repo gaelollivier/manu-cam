@@ -23,6 +23,15 @@ const FILTERS_PRESET = {
       { 'annotations.boundingBoxes': { $ne: [] } },
     ],
   },
+  hasMultipleBoundingBoxes: {
+    $and: [
+      { 'annotations.boundingBoxes': { $ne: null } },
+      { 'annotations.boundingBoxes': { $ne: [] } },
+    ],
+    // NOTE: This is quite hacky but I couldn't find a better filter to check if array is >1
+    // ($when is not authorized on Atlas free tier...)
+    $expr: { $gt: [{ $arrayElemAt: ['$annotations.boundingBoxes', 1] }, 0] },
+  },
 };
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {

@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router';
 import React from 'react';
 
 const FILTERS_VIEWS = [
@@ -6,6 +7,7 @@ const FILTERS_VIEWS = [
   { label: 'Missing Bounding Box', value: 'missingBoundingBox' },
   { label: 'Skipped', value: 'skipped' },
   { label: 'Has bounding box', value: 'hasBoundingBox' },
+  { label: 'Has multiple bounding boxes', value: 'hasMultipleBoundingBoxes' },
 ];
 
 export const useFiltersViews = ({
@@ -13,10 +15,14 @@ export const useFiltersViews = ({
 }: {
   goToOffset: (offset: number) => void;
 }) => {
-  const [filtersView, setFiltersView] = React.useState('');
+  const router = useRouter();
+  const filtersView = router.query.filtersView ?? '';
 
   const handleFiltersViewChange = (newView: string) => {
-    setFiltersView(newView);
+    router.push({
+      pathname: router.pathname,
+      query: { filtersView: newView },
+    });
     goToOffset(0);
   };
 
