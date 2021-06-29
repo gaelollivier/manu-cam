@@ -10,6 +10,7 @@ import { useFiltersViews } from '../components/annotate/useFiltersViews';
 import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
 import { usePagination } from '../components/annotate/usePagination';
 import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
+import { ManuAI } from '../components/ManuAI';
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useAuthToken } from '../components/useAuthToken';
@@ -145,6 +146,7 @@ const Images = () => {
                 ref={imageRef}
                 className="image"
                 src={currentImage.files.large.mediaLink}
+                crossOrigin="anonymous"
               />
             </BoundingBoxAnnotationTool>
           ) : null}
@@ -175,6 +177,7 @@ const Images = () => {
                 </li>
               ) : null}
               {settingsControls}
+              <ManuAI imageRef={imageRef} />
               <li>Filters: {filtersViewControls}</li>
               {loading ? <li>Loading...</li> : null}
               <PreloadImages images={images} />
