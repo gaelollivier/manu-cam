@@ -2,7 +2,7 @@ import React from 'react';
 
 export const useAnnotationSettings = () => {
   const [settings, setSettings] = React.useState({
-    aiBox: false,
+    aiBox: true,
     annotatedBox: true,
     autoNextOnBoundingBox: false,
   });

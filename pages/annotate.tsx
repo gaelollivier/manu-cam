@@ -10,12 +10,12 @@ import { useFiltersViews } from '../components/annotate/useFiltersViews';
 import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
 import { usePagination } from '../components/annotate/usePagination';
 import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
-import { ManuAI } from '../components/ManuAI';
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useAuthToken } from '../components/useAuthToken';
 import { useElementSize } from '../components/useElementSize';
 import { BoundingBox, useAnnotationImages } from '../components/useImages';
+import { useManuAI } from '../components/useManuAI';
 import { isDefined } from '../lib/utils';
 
 const getBoxStyle = ({
@@ -60,9 +60,16 @@ const Images = () => {
     `?${[paginationParams, `filtersView=${filtersView}`].join('&')}`
   );
 
-  const loading = isValidating || saveLoading;
-
   const currentImage = getCurrentImage(images);
+
+  const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
+
+  const { manuAIButton, manuAIDetectedBoxes, manuAILoading, resetManuAiBoxes } =
+    useManuAI({
+      imageRef,
+    });
+
+  const loading = isValidating || saveLoading || manuAILoading;
 
   const {
     currentAnnotations,
@@ -108,18 +115,14 @@ const Images = () => {
 
   useKeyboardHandlers({
     loading,
-    onNext: () => nextImage({ totalCount }),
+    onNext: () => {
+      nextImage({ totalCount });
+      resetManuAiBoxes();
+    },
     onPrev: prevImage,
     onSave: handleSave,
     onToggleHasManu: handleToggleHasManu,
     onRemoveBoundingBox: handleRemoveBoundingBox(),
-  });
-
-  const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
-
-  const aiBox = getBoxStyle({
-    imageSize,
-    boundingBox: currentImage?.manuDetection,
   });
 
   const annotatedBoxes = annotatedBoundingBoxes
@@ -131,6 +134,16 @@ const Images = () => {
       })
     )
     .filter(isDefined);
+
+  const manuAiBoxes = manuAIDetectedBoxes.map(({ bBox, score }, index) => ({
+    score,
+    style: getBoxStyle({
+      imageSize,
+      boundingBox: bBox,
+      // Use a different index than annotated box, to get different colors
+      index: index + 1,
+    }),
+  }));
 
   return (
     <>
@@ -154,9 +167,15 @@ const Images = () => {
             annotatedBoxes.map((annotatedBox, index) => (
               <div key={index} className="bounding-box" style={annotatedBox} />
             ))}
-          {settings.aiBox && aiBox && (
-            <div className="bounding-box ai-box" style={aiBox} />
-          )}
+          {settings.aiBox &&
+            manuAiBoxes.map(({ score, style }, index) => (
+              <div
+                key={index}
+                className="bounding-box ai-box"
+                style={style ?? {}}
+                data-label={score.toFixed(3)}
+              />
+            ))}
         </div>
         <div className="annotation-menu">
           <div className="actions">
@@ -177,8 +196,8 @@ const Images = () => {
                 </li>
               ) : null}
               {settingsControls}
-              <ManuAI imageRef={imageRef} />
               <li>Filters: {filtersViewControls}</li>
+              <li>{manuAIButton}</li>
               {loading ? <li>Loading...</li> : null}
               <PreloadImages images={images} />
             </ul>
@@ -223,8 +242,13 @@ const Images = () => {
           outline: solid 2px red;
         }
 
-        .ai-box {
-          outline: solid 2px blue;
+        .ai-box::before {
+          content: attr(data-label);
+          font-size: 12px;
+          line-height: 12px;
+          background: #fff;
+          position: absolute;
+          top: 0;
         }
 
         .annotation-menu {

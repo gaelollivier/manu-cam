@@ -994,6 +994,11 @@
     through2 "^4.0.0"
     xdg-basedir "^4.0.0"
 
+"@tensorflow/tfjs-automl@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-automl/-/tfjs-automl-1.2.0.tgz#f03478e43d5236864fe277c4142c06fbd3769945"
+  integrity sha512-NeHkSb4bTSAJRwNnli0WUHzZ+51phcWS1mya8cTxYTCk0U+ZKH0GADNElk45H9p7dvX56LaOTenhC7FNGidbkA==
+
 "@tensorflow/tfjs-backend-cpu@3.7.0":
   version "3.7.0"
   resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-backend-cpu/-/tfjs-backend-cpu-3.7.0.tgz#146ad00a8fffdf4794f9b1a0bfc080cddba96836"
