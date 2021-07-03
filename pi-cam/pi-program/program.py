@@ -20,19 +20,19 @@ while True:
     camera.resolution = (2028,1520)
     camera.capture(imageStream, format='jpeg', quality=10)
     imageStream.seek(0)
-    # try:
-    #     res = requests.post(uploadUrl,
-    #                         headers={'Authorization': 'Bearer ' + os.environ['MANUCAM_AUTH']},
-    #                         files={'image': imageStream})
-    #     try:
-    #         endTime = time()
-    #         print(res.json(), ' [', round(endTime - startTime, 2), 's ]')
-    #     except:
-    #         print("Invalid response")
-    #         print(res.text)
-    # except Exception as err:
-    #     print("Failed to upload image")
-    #     print(err)    
+    try:
+        res = requests.post(uploadUrl,
+                            headers={'Authorization': 'Bearer ' + os.environ['MANUCAM_AUTH']},
+                            files={'image': imageStream})
+        try:
+            endTime = time()
+            print(res.json(), ' [', round(endTime - startTime, 2), 's ]')
+        except:
+            print("Invalid response")
+            print(res.text)
+    except Exception as err:
+        print("Failed to upload image")
+        print(err)    
     
     os.system('/opt/vc/bin/vcgencmd measure_temp')
     

@@ -28,11 +28,11 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         $set: {
           file: file.metadata,
           manuDetection: {
-            score: parseFloat(manuDetection.score as string) ?? 0,
-            x1: parseFloat(manuDetection.x1 as string) ?? 0,
-            y1: parseFloat(manuDetection.y1 as string) ?? 0,
-            x2: parseFloat(manuDetection.x2 as string) ?? 0,
-            y2: parseFloat(manuDetection.y2 as string) ?? 0,
+            score: parseFloat(manuDetection.score as string) || 0,
+            x1: parseFloat(manuDetection.x1 as string) || 0,
+            y1: parseFloat(manuDetection.y1 as string) || 0,
+            x2: parseFloat(manuDetection.x2 as string) || 0,
+            y2: parseFloat(manuDetection.y2 as string) || 0,
           },
         },
       },
@@ -43,5 +43,5 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const endTime = Date.now();
   console.log(`[upload-live] ${Math.round(endTime - startTime)}ms`);
 
-  res.status(200).send({ success: true, uploaded: false });
+  res.status(200).send({ success: true });
 };
