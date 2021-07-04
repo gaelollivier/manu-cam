@@ -3,6 +3,7 @@ import os
 from io import BytesIO
 import picamera
 from time import sleep,time
+import sys
 
 camera = picamera.PiCamera()
 
@@ -41,6 +42,9 @@ while True:
         print(err)    
     
     os.system('/opt/vc/bin/vcgencmd measure_temp')
+
+    # Flush stdout to make sure logs are written after each run
+    sys.stdout.flush()
     
     # Delay to avoid taking too many pictures
     sleep(60)

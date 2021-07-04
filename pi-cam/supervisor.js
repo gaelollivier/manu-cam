@@ -32,6 +32,8 @@ async function sendLogs() {
       'content-type': 'application/json',
     },
     body: JSON.stringify({ logs }),
+  }).catch((err) => {
+    console.error('Error Uploading logs', err);
   });
   if (res.status === 200) {
     logs = '';
@@ -57,7 +59,16 @@ async function refreshProgram() {
   // Retrieve latest program
   const { piProgram } = await fetch(programURL, {
     headers: { authorization: `Bearer ${process.env.MANUCAM_AUTH}` },
-  }).then((res) => res.json());
+  })
+    .then((res) => res.json())
+    .catch((err) => {
+      console.error('Error retrieving latest program', err);
+      return { piProgram: null };
+    });
+
+  if (!piProgram) {
+    return;
+  }
 
   if (piProgram.version === currentProgramVersion) {
     return;

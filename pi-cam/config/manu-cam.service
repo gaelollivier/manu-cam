@@ -1,0 +1,11 @@
+[Unit]
+Description=ManuCam
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStart=/home/pi/app/pi-startup.sh
+
+[Install]
+WantedBy=multi-user.target

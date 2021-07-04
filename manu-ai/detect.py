@@ -8,8 +8,10 @@ import numpy as np
 import requests
 from bson.objectid import ObjectId
 
+print("Loading model...")
+
 # Load the TFLite model and allocate tensors
-modelPath = str(pathlib.Path(__file__).parent / 'tflite-manu_images_v1' / 'model.tflite')
+modelPath = str(pathlib.Path(__file__).parent / 'tflite-manu_images_v2' / 'model.tflite')
 interpreter = tf.lite.Interpreter(model_path=modelPath)
 interpreter.allocate_tensors()
 
@@ -23,24 +25,34 @@ def getOutputScores():
     return interpreter.get_tensor(interpreter.get_output_details()[2]['index'])[0]
 
 def detectManu(imageUrl):
+    print("Resizing...")
     # Download image
     resp = requests.get(imageUrl, stream=True).raw
     image = np.asarray(bytearray(resp.read()), dtype="uint8")
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
     # Resize to tensorflow expected size
-    image = cv2.resize(image, (512, 512))
+    image = cv2.resize(image, (320, 320))
 
     setInputImage(image)
 
+    print("Running model...")
+
     interpreter.invoke()
 
-    bestScore = getOutputScores()[0]
+    scores = getOutputScores()
 
-    if bestScore < 0.8:
+    print("SCORES", scores)
+
+    bestScore = scores[0]
+
+    if bestScore < 0.5:
         return
 
-    bestRect = getOutputRects()[0]
+    boundingBoxes = getOutputRects()
+    print("RECTS", boundingBoxes)
+
+    bestRect = boundingBoxes[0]
 
     return {
         'score': float(bestScore),
@@ -52,8 +64,10 @@ def detectManu(imageUrl):
 
 dbClient = MongoClient(os.environ['MONGO_URL'])
 
-# query = {'_id': ObjectId('5f2408afb93e8300081f797a')}
-query = {}
+query = {'_id': ObjectId('60e16332740f6b0008403ad5')}
+# query = {}
+
+print("Retrieving image...")
 
 # Run detection on all images
 for imageRecord in dbClient.get_database('manu_cam').get_collection('images').find(query):

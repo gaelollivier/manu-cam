@@ -59,7 +59,9 @@ export const useManuAI = ({
     setLoading(false);
   };
 
-  const manuAIButton = <button onClick={handleDetect}>MANU AI</button>;
+  const manuAIButton = (
+    <button onClick={handleDetect}>{loading ? 'Loading...' : 'MANU AI'}</button>
+  );
 
   return {
     manuAIButton,

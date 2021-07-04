@@ -13,10 +13,9 @@ const Images = () => {
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
-  const { manuAIButton, manuAIDetectedBoxes, manuAILoading, resetManuAiBoxes } =
-    useManuAI({
-      imageRef,
-    });
+  const { manuAIButton, manuAIDetectedBoxes, resetManuAiBoxes } = useManuAI({
+    imageRef,
+  });
 
   const params = [
     selectedHour && `hour=${selectedHour}`,
@@ -71,6 +70,7 @@ const Images = () => {
                 {mainImage?.time.toString().substr(0, 16).replace('T', ' ') ??
                   ''}
               </div>
+              <div>{mainImage?._id ?? ''}</div>
               <div>
                 <label>
                   <input
