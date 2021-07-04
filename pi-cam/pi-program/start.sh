@@ -6,7 +6,3 @@ ENTRY_POINT="$DIR/program.py"
 
 echo "START $ENTRY_POINT"
 exec python -u $ENTRY_POINT
-# uname -a
-# sleep 120
-#sudo reboot
-# ip link show

@@ -1,10 +1,7 @@
 import Head from 'next/head';
 import React from 'react';
 
-import {
-  getBoundingBoxColor,
-  useAnnotationControls,
-} from '../components/annotate/useAnnotationControls';
+import { useAnnotationControls } from '../components/annotate/useAnnotationControls';
 import { useAnnotationSettings } from '../components/annotate/useAnnotationSettings';
 import { useFiltersViews } from '../components/annotate/useFiltersViews';
 import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
@@ -14,29 +11,10 @@ import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useAuthToken } from '../components/useAuthToken';
 import { useElementSize } from '../components/useElementSize';
-import { BoundingBox, useAnnotationImages } from '../components/useImages';
+import { useAnnotationImages } from '../components/useImages';
 import { useManuAI } from '../components/useManuAI';
+import { getBoxStyle } from '../lib/boundingBox';
 import { isDefined } from '../lib/utils';
-
-const getBoxStyle = ({
-  imageSize,
-  boundingBox,
-  index,
-}: {
-  imageSize: null | { width: number; height: number };
-  boundingBox?: BoundingBox;
-  index?: number;
-}) => {
-  return boundingBox && imageSize
-    ? {
-        left: `${boundingBox.x1 * imageSize.width}px`,
-        top: `${boundingBox.y1 * imageSize.height}px`,
-        width: `${(boundingBox.x2 - boundingBox.x1) * imageSize.width}px`,
-        height: `${(boundingBox.y2 - boundingBox.y1) * imageSize.height}px`,
-        outlineColor: index != null ? getBoundingBoxColor(index) : 'red',
-      }
-    : null;
-};
 
 const Images = () => {
   const { authToken, authField } = useAuthToken();

@@ -7,10 +7,10 @@ from time import sleep,time
 camera = picamera.PiCamera()
 
 # uploadUrl = "http://192.168.1.49:3000/api/upload-live"
-uploadUrl = "https://manu-cam.vercel.app/api/upload-live"
+# uploadUrl = "https://manu-cam.vercel.app/api/upload-live"
 
 # uploadUrl = "http://192.168.1.49:3000/api/upload"
-# uploadUrl = "https://manu-cam.vercel.app/api/upload"
+uploadUrl = "https://manu-cam.vercel.app/api/upload"
 
 while True:
     startTime = time()
@@ -18,6 +18,12 @@ while True:
     imageStream = BytesIO()
     # camera.rotation = 0
     camera.resolution = (2028,1520)
+
+    # You can change these as needed. Six seconds (6000000)
+    # is the max for shutter speed and 800 is the max for ISO.
+    # camera.shutter_speed = 1000000
+    # camera.iso = 800
+
     camera.capture(imageStream, format='jpeg', quality=10)
     imageStream.seek(0)
     try:
@@ -37,4 +43,4 @@ while True:
     os.system('/opt/vc/bin/vcgencmd measure_temp')
     
     # Delay to avoid taking too many pictures
-    sleep(20)
+    sleep(60)

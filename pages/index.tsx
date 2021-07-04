@@ -2,11 +2,21 @@ import Head from 'next/head';
 import React from 'react';
 
 import { SWRProvider } from '../components/SWRProvider';
+import { useElementSize } from '../components/useElementSize';
 import { Image, useImages } from '../components/useImages';
+import { useManuAI } from '../components/useManuAI';
+import { getBoxStyle } from '../lib/boundingBox';
 
 const Images = () => {
   const [selectedHour, selectHour] = React.useState<string | null>(null);
   const [hasManu, setHasManu] = React.useState<boolean>(false);
+
+  const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
+
+  const { manuAIButton, manuAIDetectedBoxes, manuAILoading, resetManuAiBoxes } =
+    useManuAI({
+      imageRef,
+    });
 
   const params = [
     selectedHour && `hour=${selectedHour}`,
@@ -22,18 +32,15 @@ const Images = () => {
     (selectedImage ? images?.find(({ _id }) => _id === selectedImage) : null) ??
     images[0];
 
-  const manuAIBox = mainImage?.manuDetection
-    ? {
-        left: `${mainImage?.manuDetection.x1 * 100}%`,
-        top: `${mainImage?.manuDetection.y1 * 100}%`,
-        width: `${
-          (mainImage?.manuDetection.x2 - mainImage?.manuDetection.x1) * 100
-        }%`,
-        height: `${
-          (mainImage?.manuDetection.y2 - mainImage?.manuDetection.y1) * 100
-        }%`,
-      }
-    : null;
+  const manuAiBoxes = manuAIDetectedBoxes.map(({ bBox, score }, index) => ({
+    score,
+    style: getBoxStyle({
+      imageSize,
+      boundingBox: bBox,
+      // Use a different index than annotated box, to get different colors
+      index: index + 1,
+    }),
+  }));
 
   return (
     <>
@@ -42,10 +49,19 @@ const Images = () => {
           <div className="main-view">
             {mainImage ? (
               <div className="main-image">
-                <img src={mainImage.files.large.mediaLink} />
-                {manuAIBox && (
-                  <div className="bounding-box" style={manuAIBox} />
-                )}
+                <img
+                  ref={imageRef}
+                  src={mainImage.files.large.mediaLink}
+                  crossOrigin="anonymous"
+                />
+                {manuAiBoxes.map(({ score, style }, index) => (
+                  <div
+                    key={index}
+                    className="bounding-box ai-box"
+                    style={style ?? {}}
+                    data-label={score.toFixed(3)}
+                  />
+                ))}
               </div>
             ) : (
               <div className="main-view loading">Loading...</div>
@@ -65,6 +81,7 @@ const Images = () => {
                   Manu Only
                 </label>
               </div>
+              <div>{manuAIButton}</div>
             </div>
             <div className="hour-selector">
               <select
@@ -84,7 +101,10 @@ const Images = () => {
               {images.map(({ _id, files: { small } }) => (
                 <img
                   className="thumbnail"
-                  onMouseEnter={() => selectImage(_id)}
+                  onMouseEnter={() => {
+                    selectImage(_id);
+                    resetManuAiBoxes();
+                  }}
                   key={_id}
                   style={{ width: `${(100 / images.length).toFixed(2)}%` }}
                   src={small.mediaLink}
@@ -150,11 +170,6 @@ const Images = () => {
           outline: none;
         }
 
-        .bounding-box {
-          position: absolute;
-          border: 2px solid red;
-        }
-
         .main-image {
           max-width: 100%;
           max-height: 100%;
@@ -179,6 +194,20 @@ const Images = () => {
         .images-scroller .thumbnail {
           display: block;
           height: 100%;
+        }
+
+        .bounding-box {
+          position: absolute;
+          outline: solid 2px red;
+        }
+
+        .ai-box::before {
+          content: attr(data-label);
+          font-size: 12px;
+          line-height: 12px;
+          background: #fff;
+          position: absolute;
+          top: 0;
         }
       `}</style>
     </>

@@ -1,11 +1,7 @@
 import React from 'react';
 
-import { BoundingBox, Image } from '../useImages';
-
-const BOUNDING_BOXES_COLORS = ['red', '#00FF00', 'blue', 'yellow'];
-
-export const getBoundingBoxColor = (boxIndex: number) =>
-  BOUNDING_BOXES_COLORS[boxIndex % BOUNDING_BOXES_COLORS.length];
+import { BoundingBox, getBoundingBoxColor } from '../../lib/boundingBox';
+import { Image } from '../useImages';
 
 export const useAnnotationControls = ({
   currentImage,

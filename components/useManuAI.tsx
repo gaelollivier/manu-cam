@@ -5,7 +5,7 @@ import React from 'react';
 
 import { loadObjectDetection } from '@tensorflow/tfjs-automl';
 
-import { BoundingBox } from './useImages';
+import { BoundingBox } from '../lib/boundingBox';
 
 async function loadModel() {
   const model = await loadObjectDetection(
