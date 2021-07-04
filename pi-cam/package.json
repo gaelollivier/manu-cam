@@ -1,0 +1,15 @@
+{
+  "name": "pi-cam",
+  "version": "1.0.0",
+  "description": "",
+  "main": "supervisor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs-automl": "^1.2.0",
+    "@tensorflow/tfjs-node": "^1.5.1"
+  }
+}
