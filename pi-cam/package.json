@@ -10,6 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "@tensorflow/tfjs-automl": "^1.2.0",
-    "@tensorflow/tfjs-node": "^1.5.1"
+    "@tensorflow/tfjs-node": "^1.5.1",
+    "node-fetch": "^2.6.1",
+    "pi-camera-connect": "^0.3.4",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.3.5"
   }
 }
