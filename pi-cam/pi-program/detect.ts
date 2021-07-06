@@ -130,12 +130,18 @@ const uploadImage = async ({
 
     const timeSinceLastUpload = Date.now() - lastUploadTime;
 
+    console.log({
+      timeSinceLastUpload,
+      flag: timeSinceLastUpload > 10 * 60 * 1000,
+    });
+
     if (
       // Upload if objects are detected, (we are limited by processing/upload time, so we shouldn't
       // send more than one image every 4-5s)
       objectDetection.length ||
       // If no objects, upload one image every 10 minutes (so we can still get a timelapse effect)
-      timeSinceLastUpload > 10 * 60 * 1000
+      // timeSinceLastUpload > 10 * 60 * 1000
+      false
     ) {
       const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
         uploadImage({ image, objectDetection })
@@ -150,6 +156,9 @@ const uploadImage = async ({
         uploadRes,
       });
     }
+
+    // NOTE: Temporary workaround because of memory leak :(
+    process.exit(0);
   }
 })().catch((err) => {
   console.error(err);

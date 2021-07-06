@@ -103,6 +103,12 @@ async function refreshProgram() {
   currentProcess.on('error', (err) => {
     logInfo('Process failed', err);
   });
+
+  currentProcess.on('exit', () => {
+    logInfo('Process stopped, restarting...');
+    currentProcess = null;
+    currentProgramVersion = null;
+  });
 }
 
 let refreshing = false;

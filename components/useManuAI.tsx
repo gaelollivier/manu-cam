@@ -5,7 +5,7 @@ import React from 'react';
 
 import { loadObjectDetection } from '@tensorflow/tfjs-automl';
 
-import { BoundingBox } from '../lib/boundingBox';
+import { BoundingBox } from './BoundingBoxes';
 
 async function loadModel() {
   const model = await loadObjectDetection(
@@ -21,7 +21,7 @@ export const useManuAI = ({
 }) => {
   const [loading, setLoading] = React.useState(false);
   const [manuAIDetectedBoxes, setManuAIDetectedBoxes] = React.useState<
-    Array<{ score: number; bBox: BoundingBox }>
+    Array<{ score: number; label: string; box: BoundingBox }>
   >([]);
 
   const handleDetect = async () => {
@@ -47,8 +47,9 @@ export const useManuAI = ({
     console.log(predictions);
     setManuAIDetectedBoxes(
       predictions.map((prediction) => ({
+        label: prediction.label,
         score: prediction.score,
-        bBox: {
+        box: {
           x1: prediction.box.left / imgWidth,
           y1: prediction.box.top / imgHeight,
           x2: (prediction.box.left + prediction.box.width) / imgWidth,

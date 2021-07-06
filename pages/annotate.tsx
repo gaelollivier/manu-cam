@@ -7,13 +7,13 @@ import { useFiltersViews } from '../components/annotate/useFiltersViews';
 import { useKeyboardHandlers } from '../components/annotate/useKeyboardHandlers';
 import { usePagination } from '../components/annotate/usePagination';
 import { BoundingBoxAnnotationTool } from '../components/BoundingBoxAnnotationTool';
+import { BoundingBoxes } from '../components/BoundingBoxes';
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useAuthToken } from '../components/useAuthToken';
 import { useElementSize } from '../components/useElementSize';
 import { useAnnotationImages } from '../components/useImages';
 import { useManuAI } from '../components/useManuAI';
-import { getBoxStyle } from '../lib/boundingBox';
 import { isDefined } from '../lib/utils';
 
 const Images = () => {
@@ -42,12 +42,11 @@ const Images = () => {
 
   const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
 
-  const { manuAIButton, manuAIDetectedBoxes, manuAILoading, resetManuAiBoxes } =
-    useManuAI({
-      imageRef,
-    });
+  const { manuAIButton, manuAIDetectedBoxes, resetManuAiBoxes } = useManuAI({
+    imageRef,
+  });
 
-  const loading = isValidating || saveLoading || manuAILoading;
+  const loading = isValidating || saveLoading;
 
   const {
     currentAnnotations,
@@ -103,26 +102,6 @@ const Images = () => {
     onRemoveBoundingBox: handleRemoveBoundingBox(),
   });
 
-  const annotatedBoxes = annotatedBoundingBoxes
-    .map((boundingBox, index) =>
-      getBoxStyle({
-        imageSize,
-        boundingBox,
-        index,
-      })
-    )
-    .filter(isDefined);
-
-  const manuAiBoxes = manuAIDetectedBoxes.map(({ bBox, score }, index) => ({
-    score,
-    style: getBoxStyle({
-      imageSize,
-      boundingBox: bBox,
-      // Use a different index than annotated box, to get different colors
-      index: index + 1,
-    }),
-  }));
-
   return (
     <>
       <div className="page">
@@ -141,19 +120,25 @@ const Images = () => {
               />
             </BoundingBoxAnnotationTool>
           ) : null}
-          {settings.annotatedBox &&
-            annotatedBoxes.map((annotatedBox, index) => (
-              <div key={index} className="bounding-box" style={annotatedBox} />
-            ))}
-          {settings.aiBox &&
-            manuAiBoxes.map(({ score, style }, index) => (
-              <div
-                key={index}
-                className="bounding-box ai-box"
-                style={style ?? {}}
-                data-label={score.toFixed(3)}
-              />
-            ))}
+          {settings.annotatedBox && (
+            <BoundingBoxes
+              // NOTE: This should be refactored so that annotations have their own label
+              boundingBoxes={annotatedBoundingBoxes.map((box) => ({
+                box,
+                label: '',
+                score: 0,
+              }))}
+              imageSize={imageSize}
+            />
+          )}
+          {settings.aiBox && (
+            <BoundingBoxes
+              boundingBoxes={manuAIDetectedBoxes}
+              imageSize={imageSize}
+              // Use a different index than annotated box, to get different colors
+              colorOffset={1}
+            />
+          )}
         </div>
         <div className="annotation-menu">
           <div className="actions">
@@ -213,20 +198,6 @@ const Images = () => {
 
         .image {
           max-height: calc(100vh - 10px);
-        }
-
-        .bounding-box {
-          position: absolute;
-          outline: solid 2px red;
-        }
-
-        .ai-box::before {
-          content: attr(data-label);
-          font-size: 12px;
-          line-height: 12px;
-          background: #fff;
-          position: absolute;
-          top: 0;
         }
 
         .annotation-menu {

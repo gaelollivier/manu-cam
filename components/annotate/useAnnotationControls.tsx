@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { BoundingBox, getBoundingBoxColor } from '../../lib/boundingBox';
+import { BoundingBox, getBoundingBoxColor } from '../BoundingBoxes';
 import { Image } from '../useImages';
 
 export const useAnnotationControls = ({
@@ -49,14 +49,14 @@ export const useAnnotationControls = ({
     }
   };
 
-  const handleNewBoundingBox = (bBox: BoundingBox) => {
+  const handleNewBoundingBox = (box: BoundingBox) => {
     setCurrentAnnotations((current) => ({
       ...(current ?? {}),
       [currentImage?._id ?? '']: {
         ...(currentImagesAnnotations ?? {}),
         boundingBoxes: [
           ...(currentImagesAnnotations?.boundingBoxes ?? []),
-          bBox,
+          box,
         ],
       },
     }));

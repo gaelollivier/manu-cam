@@ -2,7 +2,9 @@ import Head from 'next/head';
 import * as React from 'react';
 import useSWR from 'swr';
 
+import { BoundingBoxes } from '../components/BoundingBoxes';
 import { SWRProvider } from '../components/SWRProvider';
+import { useElementSize } from '../components/useElementSize';
 import { File, Image } from '../components/useImages';
 
 const Live = () => {
@@ -10,48 +12,34 @@ const Live = () => {
     refreshInterval: 500,
   });
 
-  const liveImage: { file: File; manuDetection?: Image['manuDetection'] } =
+  const { size: imageSize, ref: imageRef } = useElementSize<HTMLImageElement>();
+
+  const liveImage: { file: File; objectDetection?: Image['objectDetection'] } =
     data?.liveImage;
 
   if (!liveImage) {
     return null;
   }
 
-  const manuAIBox =
-    liveImage?.manuDetection && liveImage.manuDetection.score > 0.5
-      ? {
-          left: `${liveImage.manuDetection.x1 * 100}%`,
-          top: `${liveImage.manuDetection.y1 * 100}%`,
-          width: `${
-            (liveImage.manuDetection.x2 - liveImage.manuDetection.x1) * 100
-          }%`,
-          height: `${
-            (liveImage.manuDetection.y2 - liveImage.manuDetection.y1) * 100
-          }%`,
-        }
-      : null;
-
   return (
     <>
       <div className="main-image">
         <img
+          ref={imageRef}
           width="1024"
           height="768"
           src={`https://storage.googleapis.com/manu-cam-images/live/latest-image.jpg?key=${Math.random()}`}
         />
-        {manuAIBox && <div className="bounding-box" style={manuAIBox} />}
+        <BoundingBoxes
+          boundingBoxes={liveImage?.objectDetection ?? []}
+          imageSize={imageSize}
+        />
       </div>
-      <pre>{JSON.stringify(liveImage?.manuDetection, null, 4)}</pre>
       <style jsx>{`
         .main-image {
           width: 1024px;
           height: 768px;
           position: relative;
-        }
-
-        .bounding-box {
-          position: absolute;
-          border: 2px solid red;
         }
       `}</style>
     </>

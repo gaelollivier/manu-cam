@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 
-import { BoundingBox } from '../lib/boundingBox';
+import { BoundingBox } from './BoundingBoxes';
 
 export interface File {
   name: string;
@@ -21,7 +21,7 @@ export interface Image {
   };
   objectDetection?: Array<{
     score: number;
-    label: number;
+    label: string;
     box: BoundingBox;
   }>;
 }

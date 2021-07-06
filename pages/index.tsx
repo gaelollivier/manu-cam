@@ -1,12 +1,12 @@
 import Head from 'next/head';
 import React from 'react';
 
+import { BoundingBoxes } from '../components/BoundingBoxes';
 import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useElementSize } from '../components/useElementSize';
 import { Image, useImages } from '../components/useImages';
 import { useManuAI } from '../components/useManuAI';
-import { getBoxStyle } from '../lib/boundingBox';
 
 const Images = () => {
   const [selectedHour, selectHour] = React.useState<string | null>(null);
@@ -32,26 +32,6 @@ const Images = () => {
     (selectedImage ? images?.find(({ _id }) => _id === selectedImage) : null) ??
     images[0];
 
-  const manuAiBoxes = manuAIDetectedBoxes.map(({ bBox, score }, index) => ({
-    score,
-    style: getBoxStyle({
-      imageSize,
-      boundingBox: bBox,
-      index,
-    }),
-  }));
-
-  const objectDetectionBoxes =
-    mainImage?.objectDetection?.map(({ box, score }, index) => ({
-      score,
-      style: getBoxStyle({
-        imageSize,
-        boundingBox: box,
-        // Use a different index than other boxes, to get different colors
-        index: index + 1,
-      }),
-    })) ?? [];
-
   return (
     <>
       <div className="page">
@@ -64,16 +44,13 @@ const Images = () => {
                   src={mainImage.files.large.mediaLink}
                   crossOrigin="anonymous"
                 />
-                {[...manuAiBoxes, ...objectDetectionBoxes].map(
-                  ({ score, style }, index) => (
-                    <div
-                      key={index}
-                      className="bounding-box ai-box"
-                      style={style ?? {}}
-                      data-label={score.toFixed(3)}
-                    />
-                  )
-                )}
+                <BoundingBoxes
+                  boundingBoxes={[
+                    ...manuAIDetectedBoxes,
+                    ...(mainImage?.objectDetection ?? []),
+                  ]}
+                  imageSize={imageSize}
+                />
               </div>
             ) : (
               <div className="main-view loading">Loading...</div>

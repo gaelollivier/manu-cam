@@ -71,11 +71,11 @@ export const BoundingBoxAnnotationTool = ({
 
     if (currentBoxStartPoint) {
       boxRef.current.style.display = 'block';
-      const bBox = getBoundingBox(currentBoxStartPoint, relativeMousePos);
-      boxRef.current.style.left = `${bBox.x1}px`;
-      boxRef.current.style.top = `${bBox.y1}px`;
-      boxRef.current.style.width = `${bBox.x2 - bBox.x1}px`;
-      boxRef.current.style.height = `${bBox.y2 - bBox.y1}px`;
+      const box = getBoundingBox(currentBoxStartPoint, relativeMousePos);
+      boxRef.current.style.left = `${box.x1}px`;
+      boxRef.current.style.top = `${box.y1}px`;
+      boxRef.current.style.width = `${box.x2 - box.x1}px`;
+      boxRef.current.style.height = `${box.y2 - box.y1}px`;
     } else {
       boxRef.current.style.display = 'none';
     }
