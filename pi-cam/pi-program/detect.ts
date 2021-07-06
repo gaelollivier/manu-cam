@@ -18,6 +18,9 @@ const MODEL_PATH = path.resolve(
 // const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload-live';
 const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload';
 
+// Only run during day-time
+const RUNNING_HOURS = [6, 22];
+
 const measureTiming = async <Res>(fn: () => Promise<Res>) => {
   const startTime = Date.now();
   const res = await fn();
@@ -100,6 +103,12 @@ const uploadImage = async ({
   let lastUploadTime = Date.now();
 
   while (true) {
+    const currentHour = new Date().getHours();
+    if (!(currentHour >= RUNNING_HOURS[0] && currentHour < RUNNING_HOURS[1])) {
+      console.log('Out of running hours', RUNNING_HOURS);
+      await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
+    }
+
     const { res: image, time: captureTime } = await measureTiming(() =>
       stillCamera.takeImage()
     );
