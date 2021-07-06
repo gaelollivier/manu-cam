@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import React from 'react';
 
+import { PreloadImages } from '../components/PreloadImages';
 import { SWRProvider } from '../components/SWRProvider';
 import { useElementSize } from '../components/useElementSize';
 import { Image, useImages } from '../components/useImages';
@@ -36,10 +37,20 @@ const Images = () => {
     style: getBoxStyle({
       imageSize,
       boundingBox: bBox,
-      // Use a different index than annotated box, to get different colors
-      index: index + 1,
+      index,
     }),
   }));
+
+  const objectDetectionBoxes =
+    mainImage?.objectDetection?.map(({ box, score }, index) => ({
+      score,
+      style: getBoxStyle({
+        imageSize,
+        boundingBox: box,
+        // Use a different index than other boxes, to get different colors
+        index: index + 1,
+      }),
+    })) ?? [];
 
   return (
     <>
@@ -53,14 +64,16 @@ const Images = () => {
                   src={mainImage.files.large.mediaLink}
                   crossOrigin="anonymous"
                 />
-                {manuAiBoxes.map(({ score, style }, index) => (
-                  <div
-                    key={index}
-                    className="bounding-box ai-box"
-                    style={style ?? {}}
-                    data-label={score.toFixed(3)}
-                  />
-                ))}
+                {[...manuAiBoxes, ...objectDetectionBoxes].map(
+                  ({ score, style }, index) => (
+                    <div
+                      key={index}
+                      className="bounding-box ai-box"
+                      style={style ?? {}}
+                      data-label={score.toFixed(3)}
+                    />
+                  )
+                )}
               </div>
             ) : (
               <div className="main-view loading">Loading...</div>
@@ -82,6 +95,9 @@ const Images = () => {
                 </label>
               </div>
               <div>{manuAIButton}</div>
+              <div>
+                <PreloadImages images={images} />
+              </div>
             </div>
             <div className="hour-selector">
               <select

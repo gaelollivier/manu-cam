@@ -19,9 +19,11 @@ export interface Image {
     skipped?: boolean;
     boundingBoxes?: Array<BoundingBox>;
   };
-  manuDetection?: BoundingBox & {
+  objectDetection?: Array<{
     score: number;
-  };
+    label: number;
+    box: BoundingBox;
+  }>;
 }
 
 interface ImagesByHour {

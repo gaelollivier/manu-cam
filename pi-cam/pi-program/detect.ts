@@ -15,8 +15,8 @@ const MODEL_PATH = path.resolve(
     `/home/pi/app/models/tf_js-manu_images_v2/model.json`
 );
 
-const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload-live';
-// const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload';
+// const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload-live';
+const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload';
 
 const measureTiming = async <Res>(fn: () => Promise<Res>) => {
   const startTime = Date.now();
@@ -57,7 +57,7 @@ const uploadImage = async ({
   objectDetection,
 }: {
   image: Buffer;
-  objectDetection: Array<automl.PredictedObject>;
+  objectDetection: Array<unknown>;
 }) => {
   const form = new FormData();
   form.append('image', image, { filename: 'image.jpg' });
@@ -86,32 +86,70 @@ const uploadImage = async ({
   console.log('Initializing model', MODEL_PATH);
   const model = await loadImageClassification(MODEL_PATH);
 
+  // NOTE: Hard-coded for now but ideally we should retrieve it from the image itself
+  const imageWidth = 2028;
+  const imageHeight = 1520;
+
   const stillCamera = new StillCamera({
-    width: 2028,
-    height: 1520,
+    width: imageWidth,
+    height: imageHeight,
   });
 
-  console.log('Starting camera');
+  console.log('Starting...', { UPLOAD_URL });
+
+  let lastUploadTime = 0;
 
   while (true) {
     const { res: image, time: captureTime } = await measureTiming(() =>
       stillCamera.takeImage()
     );
+    // Un-comment to use test image
+    // const captureTime = 0;
+    // const image = fs.readFileSync(
+    //   `${__dirname}/../test-images/2021_07_04_07_24_38_large.jpeg`
+    // );
 
-    const { res: objectDetection, time: predictionTime } = await measureTiming(
-      () =>
-        model.detect(decodeImage(image), {
-          score: 0.5,
-          iou: 0.5,
-          topk: 5,
-        })
+    const { res: predictions, time: predictionTime } = await measureTiming(() =>
+      model.detect(decodeImage(image), {
+        score: 0.5,
+        iou: 0.5,
+        topk: 5,
+      })
     );
 
-    const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
-      uploadImage({ image, objectDetection })
-    );
+    const objectDetection = predictions.map((prediction) => ({
+      label: prediction.label,
+      score: prediction.score,
+      box: {
+        x1: prediction.box.left / imageWidth,
+        y1: prediction.box.top / imageHeight,
+        x2: (prediction.box.left + prediction.box.width) / imageWidth,
+        y2: (prediction.box.top + prediction.box.height) / imageHeight,
+      },
+    }));
 
-    console.log({ captureTime, predictionTime, uploadRes });
+    const timeSinceLastUpload = Date.now() - lastUploadTime;
+
+    if (
+      // Upload if objects are detected, (we are limited by processing/upload time, so we shouldn't
+      // send more than one image every 4-5s)
+      objectDetection.length ||
+      // If no objects, upload one image every 10 minutes (so we can still get a timelapse effect)
+      timeSinceLastUpload > 10 * 60 * 1000
+    ) {
+      const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
+        uploadImage({ image, objectDetection })
+      );
+      lastUploadTime = Date.now();
+
+      console.log({
+        captureTime,
+        predictionTime,
+        uploadTime,
+        objectDetection,
+        uploadRes,
+      });
+    }
   }
 })().catch((err) => {
   console.error(err);
