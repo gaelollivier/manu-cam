@@ -15,7 +15,10 @@ const SMALL_FORMAT: ResizeOptions = {
   height: 152,
 };
 
-export const saveImage = async (path: string, { time }: { time: Date }) => {
+export const saveImage = async (
+  path: string,
+  { time, objectDetection }: { time: Date; objectDetection: unknown }
+) => {
   // Store in YYYY/MM/DD/HH/mm_ss_[size].jpg
   const folderPath = time
     .toISOString()
@@ -52,7 +55,9 @@ export const saveImage = async (path: string, { time }: { time: Date }) => {
   );
 
   const savedImage = await runDbQuery(async (db) => {
-    return db.collection('images').insertOne({ time, files: metadataByFormat });
+    return db
+      .collection('images')
+      .insertOne({ time, files: metadataByFormat, objectDetection });
   });
 
   return { insertedId: savedImage.insertedId };

@@ -14,10 +14,19 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const { fields, files } = await parseRequest(req);
 
-  const time =
-    typeof fields.time === 'string' ? new Date(fields.time) : new Date();
+  const objectDetection = (() => {
+    try {
+      return JSON.parse(fields.objectDetection as string);
+    } catch (err) {
+      console.error('Error parsing object detection param', err);
+      return null;
+    }
+  })();
 
-  const savedImage = await saveImage(files.image.path, { time });
+  const savedImage = await saveImage(files.image.path, {
+    time: new Date(),
+    objectDetection,
+  });
 
   const endTime = Date.now();
   console.log(`[upload] ${Math.round(endTime - startTime)}ms`);

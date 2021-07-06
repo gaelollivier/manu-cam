@@ -14,10 +14,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = Date.now();
 
-  const {
-    files,
-    fields: { objectDetection },
-  } = await parseRequest(req);
+  const { files, fields } = await parseRequest(req);
+
+  const objectDetection = (() => {
+    try {
+      return JSON.parse(fields.objectDetection as string);
+    } catch (err) {
+      console.error('Error parsing object detection param', err);
+      return null;
+    }
+  })();
 
   const file = await uploadImage({
     image: createReadStream(files.image.path),
