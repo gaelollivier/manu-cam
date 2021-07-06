@@ -10,8 +10,10 @@ const LogsQuery = () => {
     },
   });
 
-  const logs = data?.logs
-    ?.map(
+  const logs = [...(data?.logs ?? [])]
+    // NOTE: Logs are sent with newest first, so we reverse them to get them in "natural" order
+    .reverse()
+    .map(
       ({ time, logs }: any) =>
         `[${time.replace('T', ' ').substr(0, 19)}]\n${logs}`
     )

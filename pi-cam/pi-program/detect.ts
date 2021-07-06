@@ -97,7 +97,7 @@ const uploadImage = async ({
 
   console.log('Starting...', { UPLOAD_URL });
 
-  let lastUploadTime = 0;
+  let lastUploadTime = Date.now();
 
   while (true) {
     const { res: image, time: captureTime } = await measureTiming(() =>
@@ -109,6 +109,8 @@ const uploadImage = async ({
     //   `${__dirname}/../test-images/2021_07_04_07_24_38_large.jpeg`
     // );
 
+    // NOTE: We need to make sure we cleanup tensorflow resources after each detection, otherwise
+    // we'll get a (very fast) memory leak
     tf.engine().startScope();
 
     const { res: predictions, time: predictionTime } = await measureTiming(() =>
@@ -133,11 +135,6 @@ const uploadImage = async ({
     }));
 
     const timeSinceLastUpload = Date.now() - lastUploadTime;
-
-    console.log({
-      timeSinceLastUpload,
-      flag: timeSinceLastUpload > 10 * 60 * 1000,
-    });
 
     if (
       // Upload if objects are detected, (we are limited by processing/upload time, so we shouldn't

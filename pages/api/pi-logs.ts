@@ -8,8 +8,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     return db
       .collection('pi-logs')
       .find({})
-      .limit(500)
-      .sort({ time: 1 })
+      .limit(100)
+      .sort({ time: -1 })
       .toArray();
   });
 

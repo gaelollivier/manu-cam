@@ -70,7 +70,7 @@ async function refreshProgram() {
     return;
   }
 
-  if (piProgram.version === currentProgramVersion) {
+  if (currentProcess && piProgram.version === currentProgramVersion) {
     return;
   }
 
@@ -107,7 +107,6 @@ async function refreshProgram() {
   currentProcess.on('exit', () => {
     logInfo('Process stopped, restarting...');
     currentProcess = null;
-    currentProgramVersion = null;
   });
 }
 
