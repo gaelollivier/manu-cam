@@ -109,6 +109,8 @@ const uploadImage = async ({
     //   `${__dirname}/../test-images/2021_07_04_07_24_38_large.jpeg`
     // );
 
+    tf.engine().startScope();
+
     const { res: predictions, time: predictionTime } = await measureTiming(() =>
       model.detect(decodeImage(image), {
         score: 0.5,
@@ -116,6 +118,8 @@ const uploadImage = async ({
         topk: 5,
       })
     );
+
+    tf.engine().endScope();
 
     const objectDetection = predictions.map((prediction) => ({
       label: prediction.label,
@@ -140,8 +144,7 @@ const uploadImage = async ({
       // send more than one image every 4-5s)
       objectDetection.length ||
       // If no objects, upload one image every 10 minutes (so we can still get a timelapse effect)
-      // timeSinceLastUpload > 10 * 60 * 1000
-      false
+      timeSinceLastUpload > 10 * 60 * 1000
     ) {
       const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
         uploadImage({ image, objectDetection })
@@ -156,9 +159,6 @@ const uploadImage = async ({
         uploadRes,
       });
     }
-
-    // NOTE: Temporary workaround because of memory leak :(
-    process.exit(0);
   }
 })().catch((err) => {
   console.error(err);

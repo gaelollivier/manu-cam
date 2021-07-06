@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { BoundingBox } from '../lib/boundingBox';
+import { BoundingBox } from './BoundingBoxes';
 
 const getBoundingBox = (
   startPoint: { x: number; y: number },
