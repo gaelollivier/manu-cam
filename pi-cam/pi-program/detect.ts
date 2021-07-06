@@ -18,6 +18,12 @@ const MODEL_PATH = path.resolve(
 const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload-live';
 // const UPLOAD_URL = 'https://manu-cam.vercel.app/api/upload';
 
+const measureTiming = async <Res>(fn: () => Promise<Res>) => {
+  const startTime = Date.now();
+  const res = await fn();
+  return { time: Date.now() - startTime, res };
+};
+
 const loadDictionary = (modelUrl: string) => {
   const lastIndexOfSlash = modelUrl.lastIndexOf('/');
   const prefixUrl =
@@ -46,53 +52,66 @@ const decodeImage = (img: string | Buffer) => {
   return tf.node.decodeImage(arrByte) as tf.Tensor3D;
 };
 
+const uploadImage = async ({
+  image,
+  objectDetection,
+}: {
+  image: Buffer;
+  objectDetection: Array<automl.PredictedObject>;
+}) => {
+  const form = new FormData();
+  form.append('image', image, { filename: 'image.jpg' });
+  form.append('objectDetection', JSON.stringify(objectDetection));
+
+  const res = await fetch(UPLOAD_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.MANUCAM_AUTH}`,
+    },
+    body: form,
+  })
+    .then(async (res) => {
+      const text = await res.text();
+      return JSON.parse(text);
+    })
+    .catch((err) => {
+      console.error('Error uploading image:', err);
+      return null;
+    });
+
+  console.log({ res });
+};
+
 (async () => {
   console.log('Initializing model', MODEL_PATH);
   const model = await loadImageClassification(MODEL_PATH);
 
-  // Model uses 320x320 images, so we only need to capture small images
   const stillCamera = new StillCamera({
-    width: 640,
-    height: 480,
+    width: 2028,
+    height: 1520,
   });
 
   console.log('Starting camera');
 
   while (true) {
-    let startTime = Date.now();
-    const image = await stillCamera.takeImage();
-    console.log(`Image captured in ${Date.now() - startTime}ms`);
-    startTime = Date.now();
+    const { res: image, time: captureTime } = await measureTiming(() =>
+      stillCamera.takeImage()
+    );
 
-    const form = new FormData();
-    form.append('image', image);
+    const { res: objectDetection, time: predictionTime } = await measureTiming(
+      () =>
+        model.detect(decodeImage(image), {
+          score: 0.5,
+          iou: 0.5,
+          topk: 5,
+        })
+    );
 
-    const res = await fetch(UPLOAD_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.MANUCAM_AUTH}`,
-      },
-    })
-      .then((res) => res.text())
-      .catch((err) => {
-        console.error(err);
-        return null;
-      });
+    const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
+      uploadImage({ image, objectDetection })
+    );
 
-    console.log({ res });
-
-    console.log(`Image uploaded in ${Date.now() - startTime}ms`);
-
-    console.log('Running predictions');
-    // const decodedImage = decodeImage(image);
-    // const predictions = await model.detect(decodedImage, {
-    //   score: 0.5,
-    //   iou: 0.5,
-    //   topk: 5,
-    // });
-    // console.log(predictions);
-
-    console.log(`Done in ${Date.now() - startTime}ms`);
+    console.log({ captureTime, predictionTime, uploadRes });
   }
 })().catch((err) => {
   console.error(err);

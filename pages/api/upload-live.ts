@@ -14,7 +14,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = Date.now();
 
-  const { files, fields: manuDetection } = await parseRequest(req);
+  const {
+    files,
+    fields: { objectDetection },
+  } = await parseRequest(req);
 
   const file = await uploadImage({
     image: createReadStream(files.image.path),
@@ -27,13 +30,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       {
         $set: {
           file: file.metadata,
-          manuDetection: {
-            score: parseFloat(manuDetection.score as string) || 0,
-            x1: parseFloat(manuDetection.x1 as string) || 0,
-            y1: parseFloat(manuDetection.y1 as string) || 0,
-            x2: parseFloat(manuDetection.x2 as string) || 0,
-            y2: parseFloat(manuDetection.y2 as string) || 0,
-          },
+          objectDetection,
         },
       },
       { upsert: true }
