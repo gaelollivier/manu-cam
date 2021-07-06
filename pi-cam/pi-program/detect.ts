@@ -79,7 +79,7 @@ const uploadImage = async ({
       return null;
     });
 
-  console.log({ res });
+  return res;
 };
 
 (async () => {
