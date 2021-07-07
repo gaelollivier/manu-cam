@@ -105,8 +105,9 @@ const uploadImage = async ({
   while (true) {
     const currentHour = new Date().getHours();
     if (!(currentHour >= RUNNING_HOURS[0] && currentHour < RUNNING_HOURS[1])) {
-      console.log('Out of running hours', RUNNING_HOURS);
+      console.log(`Out of running hours. ${currentHour} not in`, RUNNING_HOURS);
       await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
+      continue;
     }
 
     const { res: image, time: captureTime } = await measureTiming(() =>
@@ -149,8 +150,8 @@ const uploadImage = async ({
       // Upload if objects are detected, (we are limited by processing/upload time, so we shouldn't
       // send more than one image every 4-5s)
       objectDetection.length ||
-      // If no objects, upload one image every 10 minutes (so we can still get a timelapse effect)
-      timeSinceLastUpload > 10 * 60 * 1000
+      // If no objects, upload one image every 20 minutes (so we can still get a timelapse effect)
+      timeSinceLastUpload > 20 * 60 * 1000
     ) {
       const { res: uploadRes, time: uploadTime } = await measureTiming(() =>
         uploadImage({ image, objectDetection })
